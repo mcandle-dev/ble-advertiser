@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/inputFormScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:id="@+id/inputFormLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="카드번호 (16자리)"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="예: 1234567812345678"
+            android:maxLength="16"
+            android:inputType="number" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="디바이스 이름"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etDeviceName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="예: mcandle"
+            android:text="mcandle"
+            android:inputType="text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="카카오페이 설치 여부"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgKakaoPay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbKakaoYes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="설치됨" />
+
+            <RadioButton
+                android:id="@+id/rbKakaoNo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="설치 안됨" />
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/btnApplyPacket"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="패킷 적용"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+</ScrollView>
