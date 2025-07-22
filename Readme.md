@@ -34,42 +34,59 @@ Gradle: 8.2.0 이상
 
 📁 디렉토리 구조 및 주요 파일 설명
 app/src/main/java/com/mcandle/bleapp/
-├── MainActivity.kt               // 메인 UI, Start/Stop 버튼, BLE 권한 처리
-│                                // - BLE 권한 요청 및 상태 관리
-│                                // - Fragment 컨테이너 역할
-│                                // - ViewModel 연동 및 생명주기 관리
+├── MainActivity.kt               // 앱의 메인 화면. UI와 BLE 광고 제어의 시작점
+│                                // - **역할**: 앱의 전체 생명주기를 관리하며, `InputFormFragment`를 호스팅합니다.
+│                                // - **주요 기능**:
+│                                //   - BLE 관련 런타임 권한(BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT 등)을 사용자에게 요청하고 결과를 처리합니다.
+│                                //   - `BleAdvertiseViewModel`과 연동하여 광고 상태(시작/중지)를 감지하고, 이에 따라 Start/Stop 버튼의 활성화 및 텍스트를 동적으로 변경합니다.
+│                                //   - 사용자가 Start/Stop 버튼을 누르면 `ViewModel`에 명령을 전달하여 광고 프로세스를 시작하거나 중지시킵니다.
 ├── advertise/
-│   ├── AdvertiserManager.kt      // BLE 광고 송신/중지 관리 (ViewModel 상태 연동)
-│   │                             // - BLE 광고 설정(전송 파워, 모드 등)
-│   │                             // - 에러 처리 및 상태 콜백
-│   └── AdvertisePacketBuilder.kt // 패킷 데이터 구성 (서비스 데이터 등)
-│                                 // - BLE 광고 패킷 포맷 정의
-│                                 // - 데이터 유효성 검증
+│   ├── AdvertiserManager.kt      // 실제 BLE Advertise 기능을 담당하는 핵심 클래스
+│   │                             // - **역할**: `BluetoothLeAdvertiser`를 사용하여 BLE 광고 패킷을 송신하고 중지하는 로직을 캡슐화합니다.
+│   │                             // - **주요 기능**:
+│   │                             //   - `AdvertiseSettings`: 광고 모드(LOW_LATENCY), 전송 파워(TX_POWER_HIGH), 타임아웃 등을 설정합니다.
+│   │                             //   - `AdvertiseData`: `AdvertisePacketBuilder`가 생성한 패킷 데이터를 받아와 광고에 포함시킵니다.
+│   │                             //   - `startAdvertising()` / `stopAdvertising()`: ViewModel의 요청에 따라 실제 광고를 시작하고 중지합니다.
+│   │                             //   - `AdvertiseCallback`: 광고 시작 성공/실패, 상태 변경 등 비동기 결과를 처리하고 ViewModel에 알립니다.
+│   └── AdvertisePacketBuilder.kt // BLE 광고 패킷의 데이터 구조를 정의하고 생성
+│                                 // - **역할**: `AdvertiseDataModel`에 담긴 사용자 데이터를 BLE 규격에 맞는 `ByteArray`로 변환합니다.
+│                                 // - **주요 기능**:
+│                                 //   - **Service Data (0x16)**: 카드번호(16바이트), 카카오페이 설치 여부(1바이트 'Y'/'N')를 포함하는 서비스 데이터를 구성합니다.
+│                                 //   - **Complete Local Name (0x09)**: 디바이스 이름을 별도의 데이터 필드로 추가합니다.
+│                                 //   - `build()`: 모든 데이터를 조합하여 최종 `AdvertiseData` 객체를 생성합니다. 데이터 유효성 검증 로직도 포함될 수 있습니다.
 ├── model/
-│   └── AdvertiseDataModel.kt     // 광고 데이터(카드번호, 카카오페이, 디바이스 이름) 모델
-│                                 // - 데이터 클래스 및 유효성 검증 로직
+│   └── AdvertiseDataModel.kt     // 광고에 사용될 데이터를 표현하는 데이터 클래스(DTO)
+│                                 // - **역할**: UI(`InputFormFragment`)와 비즈니스 로직(`ViewModel`) 간에 데이터를 안전하고 명확하게 전달합니다.
+│                                 // - **구조**: `cardNumber: String`, `isKakaoPayInstalled: Boolean`, `deviceName: String` 등 광고에 필요한 모든 필드를 포함합니다.
 ├── ui/
-│   └── InputFormFragment.kt      // 카드번호/카카오페이/디바이스명 입력 UI
-│                                 // - 사용자 입력 처리 및 유효성 검사
-│                                 // - ViewModel과 데이터 바인딩
+│   └── InputFormFragment.kt      // 사용자 입력을 받는 UI 컴포넌트
+│                                 // - **역할**: 사용자가 카드번호, 카카오페이 설치 여부, 디바이스 이름을 입력하고 수정하는 화면을 제공합니다.
+│                                 // - **주요 기능**:
+│                                 //   - `EditText`와 `TextWatcher`를 사용해 카드번호 16자리 입력을 제한하고, 유효성을 검사합니다.
+│   │                             //   - `Switch` 또는 `ToggleButton`으로 카카오페이 설치 여부를 직관적으로 선택하게 합니다.
+│                                 //   - [패킷 적용] 버튼 클릭 시, 입력된 데이터를 `BleAdvertiseViewModel`의 `LiveData`에 업데이트하여 다른 컴포넌트가 사용할 수 있도록 합니다.
 ├── util/
-│   └── ByteUtils.kt              // ByteArray to HEX 변환 등
-│                                 // - 바이트 배열 처리 유틸리티
-│                                 // - 디버그 로깅 지원
+│   └── ByteUtils.kt              // 바이트 배열 처리를 위한 유틸리티 함수 모음
+│                                 // - **역할**: 데이터 변환, 디버깅 등 앱 전반에서 필요한 공통 기능을 제공합니다.
+│                                 // - **주요 기능**: `ByteArray`를 사람이 읽기 쉬운 HEX 문자열로 변환하여 로그를 확인할 때 사용하거나, 문자열을 특정 인코딩의 `ByteArray`로 변환하는 등의 작업을 수행합니다.
 ├── viewmodel/
-│   └── BleAdvertiseViewModel.kt  // LiveData로 데이터 및 광고상태 관리
-│                                 // - UI 상태 관리
-│                                 // - 비즈니스 로직 처리
+│   └── BleAdvertiseViewModel.kt  // UI 상태와 비즈니스 로직을 연결하는 중간 관리자
+│                                 // - **역할**: UI(`Activity`/`Fragment`)와 데이터 처리 로직(`AdvertiserManager`)을 분리하여, 생명주기를 고려한 안전한 데이터 관리를 수행합니다.
+│                                 // - **주요 기능**:
+│                                 //   - `LiveData`: 광고 상태(`isAdvertising`), 사용자 입력 데이터(`advertiseData`) 등을 `LiveData`로 관리하여, 데이터가 변경될 때마다 UI가 자동으로 업데이트되도록 합니다.
+│                                 //   - `startAdvertising()` / `stopAdvertising()`: UI로부터 받은 명령을 `AdvertiserManager`에 전달하고, 그 결과를 `LiveData`에 반영하여 UI 상태를 갱신합니다.
 
 app/src/main/res/
 ├── layout/
-│   ├── activity_main.xml         // 전체 UI 컨테이너
-│   │                             // - Fragment 컨테이너 레이아웃
-│   │                             // - 광고 제어 버튼 레이아웃
-│   └── fragment_input_form.xml   // 입력 폼 UI
-│                                 // - 카드번호 입력 필드 (16자리 제한)
-│                                 // - 카카오페이 설치 여부 토글
-│                                 // - 디바이스명 입력 필드
+│   ├── activity_main.xml         // `MainActivity`의 화면 레이아웃
+│   │                             // - **구조**:
+│   │                             //   - `FragmentContainerView`: `InputFormFragment`가 표시될 영역을 정의합니다.
+│   │                             //   - `Button`: [Advertise Start], [Advertise Stop] 버튼을 포함하며, `ViewModel`의 상태에 따라 활성화/비활성화됩니다.
+│   └── fragment_input_form.xml   // `InputFormFragment`의 화면 레이아웃
+│                                 // - **구조**:
+│                                 //   - `EditText`: 카드번호, 디바이스 이름 입력을 위한 텍스트 필드. `inputType`과 `maxLength` 속성으로 입력을 제한합니다.
+│                                 //   - `Switch`: 카카오페이 설치 여부를 ON/OFF로 선택하는 토글 버튼.
+│                                 //   - `Button`: [패킷 적용] 버튼을 포함하여, 입력된 데이터를 ViewModel에 저장하도록 트리거합니다.
 ├── values/
 │   ├── themes.xml                // 앱 테마 정의
 │   ├── colors.xml                // 색상 리소스
