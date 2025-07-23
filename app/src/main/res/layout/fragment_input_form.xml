@@ -15,21 +15,6 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="카드번호 (16자리)"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etCardNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="예: 1234567812345678"
-            android:maxLength="16"
-            android:inputType="number" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:text="디바이스 이름"
             android:textStyle="bold" />
 
@@ -40,6 +25,21 @@
             android:hint="예: mcandle"
             android:text="mcandle"
             android:inputType="text" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="카드번호 (16자리)"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etCardNumber"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="예: 1234567812345678"
+            android:maxLength="16"
+            android:inputType="number" />
 
         <TextView
             android:layout_width="match_parent"
@@ -58,13 +58,41 @@
                 android:id="@+id/rbKakaoYes"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="설치됨" />
+                android:text="설치됨"
+                android:checked="true"/>
 
             <RadioButton
                 android:id="@+id/rbKakaoNo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="설치 안됨" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="전송방식"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/rgEncoding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbAscii"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ASCII"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbBcd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BCD" />
         </RadioGroup>
 
         <Button
