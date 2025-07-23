@@ -4,6 +4,7 @@
 카드번호(16자리), 카카오페이 설치여부, 디바이스 이름을 입력받아 BLE 패킷에 포함하여 브로드캐스트하며,  
 EFR32BG22 등 BLE 수신기로 패킷을 실시간 확인할 수 있습니다.
 
+![Image](https://github.com/user-attachments/assets/22e0e8bf-1472-4022-b076-0e4589b5eec9)
 ---
 
 ## 주요 기능
