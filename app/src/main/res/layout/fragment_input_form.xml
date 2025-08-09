@@ -15,6 +15,33 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Advertise 모드 선택"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <RadioGroup
+            android:id="@+id/rgAdvMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rbMinimal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Minimal" />
+
+            <RadioButton
+                android:id="@+id/rbData"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Data"
+                android:checked="true"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="디바이스 이름"
             android:textStyle="bold" />
 
@@ -41,32 +68,50 @@
             android:maxLength="16"
             android:inputType="number" />
 
+<!--        <TextView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="16dp"-->
+<!--            android:text="카카오페이 설치 여부"-->
+<!--            android:textStyle="bold" />-->
+
+<!--        <RadioGroup-->
+<!--            android:id="@+id/rgKakaoPay"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:orientation="horizontal">-->
+
+<!--            <RadioButton-->
+<!--                android:id="@+id/rbKakaoYes"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="설치됨"-->
+<!--                android:checked="true"/>-->
+
+<!--            <RadioButton-->
+<!--                android:id="@+id/rbKakaoNo"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="설치 안됨" />-->
+<!--        </RadioGroup>-->
+
+        <!-- 🔺 새로 추가: 전화번호(마지막 4자리) -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="카카오페이 설치 여부"
+            android:text="전화번호 (마지막 4자리)"
             android:textStyle="bold" />
 
-        <RadioGroup
-            android:id="@+id/rgKakaoPay"
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/etPhoneLast4"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:hint="예: 1234"
+            android:inputType="number"
+            android:maxLength="4"
+            android:digits="0123456789" />
 
-            <RadioButton
-                android:id="@+id/rbKakaoYes"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="설치됨"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/rbKakaoNo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="설치 안됨" />
-        </RadioGroup>
 
         <TextView
             android:layout_width="match_parent"
@@ -101,6 +146,13 @@
             android:layout_height="wrap_content"
             android:text="패킷 적용"
             android:layout_marginTop="24dp" />
+
+        <Button
+            android:id="@+id/btnShowRaw"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Raw"
+            android:layout_marginTop="12dp" />
 
     </LinearLayout>
 </ScrollView>
