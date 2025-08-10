@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.12.0")
@@ -55,4 +56,11 @@ dependencies {
 
     // Optional: Logging
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+
+    // For local unit tests
+    testImplementation(libs.junit)
+
+    // For Android Instrumented Tests
+    androidTestImplementation(libs.androidx.junit) // Uses androidx.test.ext:junit from your toml
+    androidTestImplementation(libs.androidx.espresso.core) // For Espresso, if you use it
 }
