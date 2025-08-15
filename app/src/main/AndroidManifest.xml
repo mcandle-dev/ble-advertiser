@@ -3,15 +3,32 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.mcandle.bleapp">
 
-    <!-- BLE Advertise 관련 권한 -->
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
-    <!-- Android 12+ (API 31 이상) 런타임 권한 -->
+    <!-- BLE: Android 12+ (API 31+) 권한 -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <!-- 일부 어댑터/디바이스 접근 시 필요할 수 있어 권장 -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- BLE: Android 11 이하(<= API 30) 호환 권한 -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+
+    <!-- 네트워크가 필요하면 그대로 유지 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 기기 BLE 기능 선언 -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -34,6 +51,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- 스캔 리스트 화면 추가 -->
+        <activity
+            android:name=".ui.scan.ScanListActivity"
+            android:exported="false"
+            android:label="Scan List" />
 
     </application>
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="BLE Scan List"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tvHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="이름 - MAC - RSSI(dBm)"
+        android:textSize="14sp"
+        android:paddingBottom="8dp" />
+
+    <ListView
+        android:id="@+id/lvResults"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/tvFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="뒤로가면 스캔이 중지됩니다."
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        android:paddingTop="8dp" />
+</LinearLayout>

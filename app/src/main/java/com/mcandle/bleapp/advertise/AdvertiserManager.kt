@@ -29,6 +29,7 @@ class AdvertiserManager(
             super.onStartFailure(errorCode)
             Log.e("BLE", "Advertising failed: $errorCode")
             viewModel.setAdvertising(false)
+
         }
     }
 

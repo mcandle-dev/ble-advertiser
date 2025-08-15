@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="주문 상세/결제 추천"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingBottom="12dp" />
+
+        <TextView android:id="@+id/tvStoreName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="매장명: "
+            android:textSize="16sp" />
+        <TextView android:id="@+id/tvPosId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="POS ID: "
+            android:textSize="16sp"/>
+        <TextView android:id="@+id/tvStaffName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="직원: "
+            android:textSize="16sp"/>
+
+        <!-- 상품 정보 -->
+        <TextView
+            android:id="@+id/tvProductHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="[상품]"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:paddingTop="8dp"/>
+        <TextView android:id="@+id/tvProductName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="상품: "
+            android:textSize="15sp"/>
+        <TextView android:id="@+id/tvProductQty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="수량: "
+            android:textSize="15sp"/>
+
+        <!-- 금액 -->
+        <TextView android:id="@+id/tvAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="금액: "
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="10dp"/>
+
+        <!-- 프로모션 -->
+        <TextView android:id="@+id/tvPromotionHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="[프로모션정보]"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:paddingTop="8dp"/>
+        <TextView android:id="@+id/tvPromotions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="15sp"/>
+
+        <!-- 추천 결제 -->
+        <TextView android:id="@+id/tvRecommendedHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="[추천 결제]"
+            android:textStyle="bold"
+            android:textSize="15sp"
+            android:paddingTop="8dp"/>
+        <TextView android:id="@+id/tvRecommended"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="15sp"/>
+
+        <!-- 결제금액 -->
+        <TextView android:id="@+id/tvPayAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="[결제금액] "
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:paddingTop="10dp"/>
+
+        <!-- 하단 버튼 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingTop="20dp">
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="취소"
+                android:layout_weight="1"
+                android:backgroundTint="@color/gray"
+                android:textColor="@android:color/white"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnPay"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="결제하기"
+                android:layout_weight="1"
+                android:backgroundTint="@color/teal_700"
+                android:textColor="@android:color/white"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

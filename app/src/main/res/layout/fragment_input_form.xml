@@ -68,34 +68,7 @@
             android:maxLength="16"
             android:inputType="number" />
 
-<!--        <TextView-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginTop="16dp"-->
-<!--            android:text="카카오페이 설치 여부"-->
-<!--            android:textStyle="bold" />-->
-
-<!--        <RadioGroup-->
-<!--            android:id="@+id/rgKakaoPay"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:orientation="horizontal">-->
-
-<!--            <RadioButton-->
-<!--                android:id="@+id/rbKakaoYes"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="설치됨"-->
-<!--                android:checked="true"/>-->
-
-<!--            <RadioButton-->
-<!--                android:id="@+id/rbKakaoNo"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-<!--                android:text="설치 안됨" />-->
-<!--        </RadioGroup>-->
-
-        <!-- 🔺 새로 추가: 전화번호(마지막 4자리) -->
+        <!-- 🔺 전화번호(마지막 4자리) -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -111,7 +84,6 @@
             android:inputType="number"
             android:maxLength="4"
             android:digits="0123456789" />
-
 
         <TextView
             android:layout_width="match_parent"
@@ -153,6 +125,15 @@
             android:layout_height="wrap_content"
             android:text="Raw"
             android:layout_marginTop="12dp" />
+
+        <!-- 🔻 추가: 스캔 시작 버튼 (수동 트리거 전용) -->
+        <Button
+            android:id="@+id/btnStart"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="16dp"
+            android:text="스캔 시작"
+            android:contentDescription="스캔 시작" />
 
     </LinearLayout>
 </ScrollView>

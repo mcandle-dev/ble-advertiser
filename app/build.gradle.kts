@@ -42,6 +42,9 @@ android {
 
 dependencies {
 
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.9.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.12.0")
@@ -64,3 +67,5 @@ dependencies {
     androidTestImplementation(libs.androidx.junit) // Uses androidx.test.ext:junit from your toml
     androidTestImplementation(libs.androidx.espresso.core) // For Espresso, if you use it
 }
+
+
