@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 디바이스 이름 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="디바이스 이름"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etDeviceName"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="예: mcandle"
+            android:inputType="text"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 전송방식 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="전송방식"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rgEncoding"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/rbAscii"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ASCII"
+                android:layout_marginEnd="24dp"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbBcd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="BCD" />
+        </RadioGroup>
+
+        <!-- Advertise 모드 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Advertise 모드"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rgAdvMode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="32dp">
+
+            <RadioButton
+                android:id="@+id/rbMinimal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Minimal"
+                android:layout_marginEnd="24dp" />
+
+            <RadioButton
+                android:id="@+id/rbData"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Data"
+                android:checked="true"/>
+        </RadioGroup>
+
+        <!-- Scan 데이터 필터 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Scan 데이터"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/rgScanFilter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="32dp">
+
+            <RadioButton
+                android:id="@+id/rbAll"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ALL"
+                android:layout_marginBottom="4dp"
+                android:checked="true"/>
+
+            <RadioButton
+                android:id="@+id/rbRfstarOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="RFSTAR_ONLY"
+                android:layout_marginBottom="4dp" />
+
+            <RadioButton
+                android:id="@+id/rbIbeaconRfstar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="IBEACON_RFSTAR" />
+
+        </RadioGroup>
+
+        <!-- 저장 버튼 -->
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="저장"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/blue_button_background"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+
+</ScrollView>

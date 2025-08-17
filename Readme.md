@@ -1,187 +1,284 @@
-BLE Advertiser App (Kotlin, Android)
-📲 프로젝트 소개
-이 앱은 Android 디바이스를 BLE Advertiser(광고 송신기)로 동작시키는 테스트 앱입니다.
+# BLE Advertiser & Scanner App
 
-카드번호(16자리), 카카오페이 설치 여부, 디바이스 이름을 직접 입력
+Android BLE (Bluetooth Low Energy) 광고 송신 및 수신 기능을 제공하는 테스트 앱입니다. 매장에서 고객의 카드번호와 전화번호를 BLE로 광고하고, 주변 iBeacon 신호를 스캔하여 결제 요청을 매칭하는 시스템입니다.
 
-해당 데이터를 BLE Advertise 패킷으로 브로드캐스트
+## 📱 주요 기능
 
-광고 시작/중지 상태를 UI에서 직관적으로 제어
+### 🔵 BLE Advertise (광고 송신)
+- **카드번호 (16자리)** 및 **전화번호 (4자리)** BLE 광고
+- **ASCII/BCD** 인코딩 방식 선택
+- **Minimal/Data** 광고 모드 지원
+- **디바이스명** 커스터마이징
 
-EFR32BG22 등 BLE 수신 장비와 호환 가능하도록, 패킷 구조와 데이터가 명확히 규격화되어 있습니다.
+### 🔍 BLE Scanner (신호 수신)
+- **iBeacon 형태** 신호 감지
+- **전화번호 매칭** 기반 자동 결제 팝업
+- **3가지 스캔 필터**: ALL, RFSTAR_ONLY, IBEACON_RFSTAR
+- **실시간 패킷 로그** 디버깅 기능
 
-🚀 주요 기능
-카드번호, 카카오페이, 디바이스 이름 입력 (UI 제공, 기본값 지정 가능)
+### 💳 결제 시스템
+- **2단계 팝업**: 결제 요청 도착 → 상세 결제 정보
+- **매장 정보**: 엠캔들 잠실점, 직원명
+- **상품 목록**: 여성/남성 상의, 수량, 금액
+- **할인 정보**: 롯데카드 10% 할인
 
-BLE Advertise 시작/중지 (한 번에 하나의 패킷만 송신)
+### ⚙️ 설정 관리
+- **SharedPreferences** 기반 설정 저장
+- **디바이스명, 인코딩, 광고모드, 스캔필터** 설정
+- **상단바 설정 버튼**으로 접근
 
-광고 시작/중지 상태에 따라 Start/Stop 버튼 UI가 동적으로 변함
+## 🏗️ 프로젝트 구조
 
-Android 8.0 (API 26)+, Android Studio Meerkat Feature Drop 이상 지원
-
-🛠️ 개발 환경
-Android Studio Meerkat Feature Drop (최신 권장)
-
-Kotlin 1.9.0 이상
-
-minSdk: 26 (Android 8.0)
-
-targetSdk: 34 (Android 14)
-
-패키지명: com.mcandle.bleapp
-
-Gradle: 8.2.0 이상
-
-📁 디렉토리 구조 및 주요 파일 설명
+```
 app/src/main/java/com/mcandle/bleapp/
-├── MainActivity.kt               // 앱의 메인 화면. UI와 BLE 광고 제어의 시작점
-│                                // - **역할**: 앱의 전체 생명주기를 관리하며, `InputFormFragment`를 호스팅합니다.
-│                                // - **주요 기능**:
-│                                //   - BLE 관련 런타임 권한(BLUETOOTH_ADVERTISE, BLUETOOTH_CONNECT 등)을 사용자에게 요청하고 결과를 처리합니다.
-│                                //   - `BleAdvertiseViewModel`과 연동하여 광고 상태(시작/중지)를 감지하고, 이에 따라 Start/Stop 버튼의 활성화 및 텍스트를 동적으로 변경합니다.
-│                                //   - 사용자가 Start/Stop 버튼을 누르면 `ViewModel`에 명령을 전달하여 광고 프로세스를 시작하거나 중지시킵니다.
-├── advertise/
-│   ├── AdvertiserManager.kt      // 실제 BLE Advertise 기능을 담당하는 핵심 클래스
-│   │                             // - **역할**: `BluetoothLeAdvertiser`를 사용하여 BLE 광고 패킷을 송신하고 중지하는 로직을 캡슐화합니다.
-│   │                             // - **주요 기능**:
-│   │                             //   - `AdvertiseSettings`: 광고 모드(LOW_LATENCY), 전송 파워(TX_POWER_HIGH), 타임아웃 등을 설정합니다.
-│   │                             //   - `AdvertiseData`: `AdvertisePacketBuilder`가 생성한 패킷 데이터를 받아와 광고에 포함시킵니다.
-│   │                             //   - `startAdvertising()` / `stopAdvertising()`: ViewModel의 요청에 따라 실제 광고를 시작하고 중지합니다.
-│   │                             //   - `AdvertiseCallback`: 광고 시작 성공/실패, 상태 변경 등 비동기 결과를 처리하고 ViewModel에 알립니다.
-│   └── AdvertisePacketBuilder.kt // BLE 광고 패킷의 데이터 구조를 정의하고 생성
-│                                 // - **역할**: `AdvertiseDataModel`에 담긴 사용자 데이터를 BLE 규격에 맞는 `ByteArray`로 변환합니다.
-│                                 // - **주요 기능**:
-│                                 //   - **Service Data (0x16)**: 카드번호(16바이트), 카카오페이 설치 여부(1바이트 'Y'/'N')를 포함하는 서비스 데이터를 구성합니다.
-│                                 //   - **Complete Local Name (0x09)**: 디바이스 이름을 별도의 데이터 필드로 추가합니다.
-│                                 //   - `build()`: 모든 데이터를 조합하여 최종 `AdvertiseData` 객체를 생성합니다. 데이터 유효성 검증 로직도 포함될 수 있습니다.
-├── model/
-│   └── AdvertiseDataModel.kt     // 광고에 사용될 데이터를 표현하는 데이터 클래스(DTO)
-│                                 // - **역할**: UI(`InputFormFragment`)와 비즈니스 로직(`ViewModel`) 간에 데이터를 안전하고 명확하게 전달합니다.
-│                                 // - **구조**: `cardNumber: String`, `isKakaoPayInstalled: Boolean`, `deviceName: String` 등 광고에 필요한 모든 필드를 포함합니다.
-├── ui/
-│   └── InputFormFragment.kt      // 사용자 입력을 받는 UI 컴포넌트
-│                                 // - **역할**: 사용자가 카드번호, 카카오페이 설치 여부, 디바이스 이름을 입력하고 수정하는 화면을 제공합니다.
-│                                 // - **주요 기능**:
-│                                 //   - `EditText`와 `TextWatcher`를 사용해 카드번호 16자리 입력을 제한하고, 유효성을 검사합니다.
-│   │                             //   - `Switch` 또는 `ToggleButton`으로 카카오페이 설치 여부를 직관적으로 선택하게 합니다.
-│                                 //   - [패킷 적용] 버튼 클릭 시, 입력된 데이터를 `BleAdvertiseViewModel`의 `LiveData`에 업데이트하여 다른 컴포넌트가 사용할 수 있도록 합니다.
-├── util/
-│   └── ByteUtils.kt              // 바이트 배열 처리를 위한 유틸리티 함수 모음
-│                                 // - **역할**: 데이터 변환, 디버깅 등 앱 전반에서 필요한 공통 기능을 제공합니다.
-│                                 // - **주요 기능**: `ByteArray`를 사람이 읽기 쉬운 HEX 문자열로 변환하여 로그를 확인할 때 사용하거나, 문자열을 특정 인코딩의 `ByteArray`로 변환하는 등의 작업을 수행합니다.
-├── viewmodel/
-│   └── BleAdvertiseViewModel.kt  // UI 상태와 비즈니스 로직을 연결하는 중간 관리자
-│                                 // - **역할**: UI(`Activity`/`Fragment`)와 데이터 처리 로직(`AdvertiserManager`)을 분리하여, 생명주기를 고려한 안전한 데이터 관리를 수행합니다.
-│                                 // - **주요 기능**:
-│                                 //   - `LiveData`: 광고 상태(`isAdvertising`), 사용자 입력 데이터(`advertiseData`) 등을 `LiveData`로 관리하여, 데이터가 변경될 때마다 UI가 자동으로 업데이트되도록 합니다.
-│                                 //   - `startAdvertising()` / `stopAdvertising()`: UI로부터 받은 명령을 `AdvertiserManager`에 전달하고, 그 결과를 `LiveData`에 반영하여 UI 상태를 갱신합니다.
+├── MainActivity.kt                     # 메인 화면 - BLE 광고/스캔 제어
+├── SettingsActivity.kt                 # 설정 화면
+│
+├── advertise/                          # BLE 광고 관련
+│   ├── AdvertiserManager.kt            # BLE 광고 송신 관리
+│   └── AdvertisePacketBuilder.kt       # BLE 패킷 데이터 생성
+│
+├── scan/                               # BLE 스캔 관련
+│   ├── BleScannerManager.kt            # BLE 스캔 및 필터링
+│   ├── IBeaconParser.kt                # iBeacon 데이터 파싱
+│   └── ScanListActivity.kt             # 스캔 결과 리스트 (디버깅용)
+│
+├── model/                              # 데이터 모델
+│   ├── AdvertiseDataModel.kt           # 광고 데이터 모델
+│   ├── AdvertiseMode.kt                # 광고 모드 (MINIMAL/DATA)
+│   └── EncodingType.kt                 # 인코딩 타입 (ASCII/BCD)
+│
+├── ui/                                 # UI 컴포넌트
+│   └── InputFormFragment.kt            # 카드번호/전화번호 입력 폼
+│
+├── util/                               # 유틸리티
+│   ├── SettingsManager.kt              # 설정 저장/불러오기 관리
+│   └── ByteUtils.kt                    # 바이트 배열 처리 유틸
+│
+└── viewmodel/                          # ViewModel
+    └── BleAdvertiseViewModel.kt        # UI 상태 및 데이터 관리
+```
 
-app/src/main/res/
-├── layout/
-│   ├── activity_main.xml         // `MainActivity`의 화면 레이아웃
-│   │                             // - **구조**:
-│   │                             //   - `FragmentContainerView`: `InputFormFragment`가 표시될 영역을 정의합니다.
-│   │                             //   - `Button`: [Advertise Start], [Advertise Stop] 버튼을 포함하며, `ViewModel`의 상태에 따라 활성화/비활성화됩니다.
-│   └── fragment_input_form.xml   // `InputFormFragment`의 화면 레이아웃
-│                                 // - **구조**:
-│                                 //   - `EditText`: 카드번호, 디바이스 이름 입력을 위한 텍스트 필드. `inputType`과 `maxLength` 속성으로 입력을 제한합니다.
-│                                 //   - `Switch`: 카카오페이 설치 여부를 ON/OFF로 선택하는 토글 버튼.
-│                                 //   - `Button`: [패킷 적용] 버튼을 포함하여, 입력된 데이터를 ViewModel에 저장하도록 트리거합니다.
-├── values/
-│   ├── themes.xml                // 앱 테마 정의
-│   ├── colors.xml                // 색상 리소스
-│   └── strings.xml               // 문자열 리소스
+## 📋 주요 파일 설명
 
-⚙️ 실행/개발 방법
-1. 프로젝트 생성
-   Android Studio → New Project → Empty Views Activity
+### 🎯 MainActivity.kt
+**역할**: 앱의 메인 진입점, BLE 광고/스캔 통합 제어
+- **Advertise Start**: 패킷 적용 + 광고 시작 + 스캔 동시 실행
+- **Advertise Stop**: 광고/스캔 모두 중지
+- **매칭 감지**: 전화번호 일치 시 2단계 결제 팝업 표시
+- **권한 관리**: BLUETOOTH_ADVERTISE, BLUETOOTH_SCAN 권한 처리
 
-패키지명: com.mcandle.bleapp
+### ⚙️ SettingsActivity.kt
+**역할**: 고급 설정 관리 화면
+- **디바이스명**: BLE 광고에 사용될 기기 이름
+- **전송방식**: ASCII(가독성) vs BCD(효율성) 선택
+- **광고모드**: MINIMAL(기본) vs DATA(상세) 선택
+- **스캔필터**: ALL/RFSTAR_ONLY/IBEACON_RFSTAR 필터링
 
-Kotlin 선택, minSdk 26 이상
+### 📡 BleScannerManager.kt
+**역할**: BLE 스캔 및 필터링 핵심 로직
+```kotlin
+class BleScannerManager(
+    context: Context,
+    listener: Listener,
+    expectedMinor: Int? = null,
+    maxTimeoutMs: Long = 60_000L,
+    mode: ScanMode = ScanMode.ALL  // 스캔 필터 모드
+)
+```
 
-2. 퍼미션 설정
-   AndroidManifest.xml에 다음 퍼미션 추가:
+**스캔 필터 구현**:
+```kotlin
+enum class ScanMode {
+    ALL,            // 모든 BLE 디바이스
+    RFSTAR_ONLY,    // RFStar 제조사(0x5246)만
+    IBEACON_RFSTAR  // RFStar iBeacon(0x02, 0x15)만
+}
+```
 
-xml
-복사
-편집
+### 📦 AdvertisePacketBuilder.kt
+**역할**: BLE 광고 패킷 생성
+- **Service Data (0x16)**: 카드번호 + 전화번호 데이터
+- **Complete Local Name (0x09)**: 디바이스명
+- **ASCII/BCD 인코딩**: 데이터 크기 최적화
+
+### 🔍 IBeaconParser.kt
+**역할**: 수신된 BLE 패킷에서 iBeacon 데이터 추출
+```kotlin
+data class IBeaconFrame(
+    val companyId: Int,
+    val uuid: String,
+    val orderNumber: String,    // UUID에서 추출
+    val phoneLast4: String,     // UUID에서 추출
+    val major: Int,
+    val minor: Int,
+    val txPower: Int
+)
+```
+
+### 💾 SettingsManager.kt
+**역할**: SharedPreferences 기반 설정 관리
+```kotlin
+// 설정 항목들
+- getDeviceName() / setDeviceName()
+- getEncodingType() / setEncodingType()  
+- getAdvertiseMode() / setAdvertiseMode()
+- getScanFilter() / setScanFilter()      // 새로 추가
+```
+
+## 🔄 앱 동작 흐름
+
+### 📱 메인 사용 시나리오
+```
+1. 설정 화면에서 디바이스명, 인코딩, 모드 설정
+2. 메인 화면에서 카드번호(16자리), 전화번호(4자리) 입력
+3. "Advertise Start" 클릭
+   ├── 입력 데이터 + 설정값 → BLE 패킷 생성
+   ├── BLE 광고 시작 (주변에 정보 브로드캐스트)
+   └── BLE 스캔 시작 (매장 iBeacon 감지)
+4. 매장 iBeacon 감지 시
+   ├── 전화번호 매칭 확인
+   ├── "결제 요청 도착" 1차 팝업
+   ├── "확인하기" 클릭
+   └── "결제 정보" 상세 팝업 (매장정보, 상품목록, 결제금액)
+```
+
+### 🔧 디버깅 기능
+- **Raw 버튼**: 생성된 BLE 패킷 HEX 데이터 확인
+- **스캔 시작**: ScanListActivity로 모든 BLE 패킷 로그 확인
+- **로그 출력**: 매칭 과정 및 패킷 정보 상세 로깅
+
+## 🛠️ 기술 스펙
+
+### 📋 개발 환경
+- **언어**: Kotlin
+- **플랫폼**: Android (minSdk 26, targetSdk 34)
+- **IDE**: Android Studio Meerkat Feature Drop
+- **패키지명**: com.mcandle.bleapp
+
+### 📚 주요 라이브러리
+```gradle
+implementation("androidx.core:core-ktx:1.13.1")
+implementation("androidx.appcompat:appcompat:1.6.1")
+implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
+implementation("androidx.fragment:fragment-ktx:1.7.1")
+implementation("androidx.activity:activity-ktx:1.9.0")
+implementation("com.google.android.material:material:1.12.0")
+```
+
+### 🔐 필요 권한
+```xml
+<!-- Android 12+ (API 31+) -->
+<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+<!-- Android 11 이하 호환 -->
 <uses-permission android:name="android.permission.BLUETOOTH" />
 <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-<uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-3. 테마 설정
-   res/values/themes.xml에서
-   Theme.BLEAdvertiser의 parent를 반드시 Theme.AppCompat.Light.DarkActionBar 등 AppCompat 계열로 설정해야 함.
+```
 
-4. build.gradle.kts 세팅
-   kotlin
-   복사
-   편집
-   implementation("androidx.core:core-ktx:1.13.1")
-   implementation("androidx.appcompat:appcompat:1.6.1")
-   implementation("com.google.android.material:material:1.12.0")
-   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-   implementation("androidx.fragment:fragment-ktx:1.7.1")
-   implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
-   implementation("androidx.activity:activity-ktx:1.9.0")
-5. 권한 요청
-   MainActivity에서 BLE 및 위치 권한을 런타임에 반드시 요청하도록 구현
+### 📡 BLE 사양
+- **광고 간격**: 100ms ~ 1000ms
+- **전송 파워**: -21dBm ~ 9dBm  
+- **광고 모드**: LOW_LATENCY
+- **패킷 크기**: 최대 31바이트
 
-6. 입력/광고 절차
-   앱 시작 후, 카드번호, 카카오페이(설치됨/설치안됨), 디바이스 이름(기본값 "mcandle") 입력
+### 📊 패킷 구조
+```
+Service Data (0x16):
+├── 카드번호: 16바이트 (ASCII) 또는 8바이트 (BCD)
+└── 전화번호: 4바이트 (ASCII) 또는 2바이트 (BCD)
 
-[패킷 적용] 버튼으로 입력값 적용
+Complete Local Name (0x09):
+└── 디바이스명: 최대 20바이트
+```
 
-[Advertise Start] 클릭 → BLE 브로드캐스트 시작, 버튼이 [적용중...]으로 비활성화
+## 🎨 UI/UX 특징
 
-[Advertise Stop] 클릭 → 광고 중단, Start 버튼 다시 활성화
+### 🖥️ 메인 화면 (단순화)
+- **카드번호/전화번호** 입력만 표시
+- **큰 입력 필드** (56dp 높이, 18sp 텍스트)
+- **색상별 버튼**: 파란색(Start), 빨간색(Stop)
 
-7. 수신 확인
-   EFR32BG22, nRF Connect 등 BLE 스캐너에서 광고 패킷 수신 확인 가능
+### ⚙️ 설정 화면
+- **상단바 설정 아이콘**으로 접근
+- **카테고리별 섹션**: 디바이스, 전송방식, 광고모드, 스캔필터
+- **일관된 버튼 스타일**: 56dp 높이, 둥근 모서리
 
-📝 기술 스펙
-BLE 광고 사양:
-- 광고 간격: 100ms ~ 1000ms (조절 가능)
-- 전송 파워: -21dBm ~ 9dBm (디바이스 지원 범위 내)
-- 광고 모드: LOW_LATENCY
-- 서비스 UUID: 사용자 정의 가능
+### 💳 결제 팝업
+- **iOS 스타일** 디자인
+- **2단계 확인**: 도착알림 → 상세정보
+- **실제 매장 데이터**: 엠캔들 잠실점, 상품목록, 할인정보
 
-패킷 구조:
-1. Service Data (0x16)
-   - 카드번호 (16바이트)
-   - 카카오페이 설치 여부 (1바이트: 'Y'/'N')
-2. Complete Local Name (0x09)
-   - 디바이스 이름 (최대 20바이트)
+## 🔧 빌드 및 실행
 
-성능 고려사항:
-- 배터리 소비: LOW_LATENCY 모드 사용시 배터리 소비가 증가할 수 있음
-- 메모리 사용: 최소 RAM 요구사항 2GB
-- 저장공간: 앱 설치시 약 10MB 필요
+### 📱 실행 방법
+```bash
+1. Android Studio에서 프로젝트 열기
+2. Gradle Sync
+3. 실제 Android 기기 연결 (BLE 기능 필요)
+4. Run 'app'
+```
 
-💡 커스터마이징/확장 포인트
-광고 데이터 추가: AdvertisePacketBuilder.kt에서 서비스 데이터 구조 확장 가능
+### ⚠️ 주의사항
+- **실제 기기 필요**: BLE 기능은 에뮬레이터에서 제한적
+- **위치 권한**: Android 11 이하에서 BLE 스캔 시 필요
+- **배터리 최적화**: LOW_LATENCY 모드로 인한 배터리 소모 증가
 
-상태 관리: BleAdvertiseViewModel의 LiveData를 사용해 UI, 로그 등과 연동
+## 🧪 테스트 방법
 
-BLE 수신/스캐너 기능: 필요시 Fragment/Activity 추가로 확장 가능
+### 📡 BLE 광고 테스트
+1. **nRF Connect** 앱으로 광고 패킷 확인
+2. **Raw 버튼**으로 생성된 패킷 데이터 검증
+3. **EFR32BG22** 같은 BLE 수신 장비로 호환성 확인
 
-🐞 트러블슈팅
-테마 오류: 반드시 AppCompat 기반 테마 사용
+### 🔍 BLE 스캔 테스트  
+1. **다른 기기**에서 iBeacon 앱 실행
+2. **스캔 시작 버튼**으로 ScanListActivity에서 패킷 로그 확인
+3. **전화번호 매칭** 시 결제 팝업 동작 확인
 
-Start/Stop 상태가 UI에 반영되지 않음: ViewModel과 observe 코드 연결 확인
+### ⚙️ 설정 테스트
+1. **설정 변경** 후 앱 재시작하여 유지 확인
+2. **다양한 조합**으로 BLE 패킷 생성 테스트
+3. **스캔 필터** 별로 수신되는 디바이스 종류 확인
 
-BLE 광고 미동작: 기기 BLE Advertise 지원 여부 확인, 권한 허용 필수
+## 🚀 향후 확장 계획
 
-📝 참고
-본 앱은 BLE 테스트/개발 목적의 샘플이며, 상용 환경에선 BLE 패킷 데이터 보호 등 추가 보안 조치가 필요할 수 있습니다.
+### 📊 Supabase 연동
+- 현재 **하드코딩된 매장/상품 데이터**를 Supabase DB에서 실시간 로드
+- **주문 이력 관리** 및 **결제 상태 동기화**
 
-Android 12(API 31)+ 이상에서 BLE 권한 세분화 및 런타임 퍼미션 적용
+### 🔒 보안 강화
+- **BLE 패킷 암호화** (AES-256)
+- **디지털 서명** 기반 패킷 무결성 검증
+- **재전송 공격 방지** (Nonce 기반)
 
-✨ 문의/기여
-코드/문서 개선이나 기능 추가를 원하시면 Pull Request 혹은 이슈 남겨주세요!
+### 📱 UI 개선
+- **다크 모드** 지원
+- **다국어** 지원 (한국어/영어)
+- **접근성** 개선 (TalkBack 지원)
 
-최신 코드는 항상 README와 함께 업데이트 해주세요.
-(2025-07 기준, Android Studio Meerkat Feature Drop/최신 SDK 호환 테스트됨)
+## 📞 문의 및 기여
+
+### 🐛 버그 리포트
+이슈 발견 시 GitHub Issues에 다음 정보와 함께 제보해주세요:
+- **기기 모델** 및 **Android 버전**
+- **재현 단계** 상세 설명
+- **로그 출력** (가능한 경우)
+
+### 🔧 기여 방법
+1. **Fork** 프로젝트
+2. **Feature Branch** 생성 (`git checkout -b feature/amazing-feature`)
+3. **Commit** 변경사항 (`git commit -m 'Add amazing feature'`)
+4. **Push** to Branch (`git push origin feature/amazing-feature`)
+5. **Pull Request** 생성
+
+---
+
+**📅 최종 업데이트**: 2025년 8월
+**🏷️ 버전**: v1.0.0
+**👨‍💻 개발자**: BLE Advertiser Team
+
+> 💡 **참고**: 본 앱은 BLE 테스트/개발 목적이며, 상용 환경에서는 추가 보안 조치가 필요할 수 있습니다.

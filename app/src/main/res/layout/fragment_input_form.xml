@@ -1,139 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/inputFormScroll"
+    android:id="@+id/inputFormLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp">
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center_vertical">
 
-    <LinearLayout
-        android:id="@+id/inputFormLayout"
+    <!-- 카드번호 -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:text="카드번호 (16자리)"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Advertise 모드 선택"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp" />
+    <EditText
+        android:id="@+id/etCardNumber"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="예: 1234567812345678"
+        android:maxLength="16"
+        android:inputType="number"
+        android:textSize="18sp"
+        android:layout_marginBottom="24dp" />
 
-        <RadioGroup
-            android:id="@+id/rgAdvMode"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+    <!-- 전화번호 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="전화번호 (마지막 4자리)"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp" />
 
-            <RadioButton
-                android:id="@+id/rbMinimal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Minimal" />
+    <EditText
+        android:id="@+id/etPhoneLast4"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:hint="예: 1234"
+        android:inputType="number"
+        android:maxLength="4"
+        android:digits="0123456789"
+        android:textSize="18sp"
+        android:layout_marginBottom="32dp" />
 
-            <RadioButton
-                android:id="@+id/rbData"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Data"
-                android:checked="true"/>
-        </RadioGroup>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="디바이스 이름"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etDeviceName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="예: mcandle"
-            android:text="mcandle"
-            android:inputType="text" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="카드번호 (16자리)"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etCardNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="예: 1234567812345678"
-            android:maxLength="16"
-            android:inputType="number" />
-
-        <!-- 🔺 전화번호(마지막 4자리) -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="전화번호 (마지막 4자리)"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etPhoneLast4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="예: 1234"
-            android:inputType="number"
-            android:maxLength="4"
-            android:digits="0123456789" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="전송방식"
-            android:textStyle="bold" />
-
-        <RadioGroup
-            android:id="@+id/rgEncoding"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/rbAscii"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ASCII"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/rbBcd"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="BCD" />
-        </RadioGroup>
-
-        <Button
-            android:id="@+id/btnApplyPacket"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="패킷 적용"
-            android:layout_marginTop="24dp" />
+    <!-- 디버깅 버튼들 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
 
         <Button
             android:id="@+id/btnShowRaw"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
             android:text="Raw"
-            android:layout_marginTop="12dp" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/gray_button_background"
+            android:layout_marginEnd="8dp" />
 
-        <!-- 🔻 추가: 스캔 시작 버튼 (수동 트리거 전용) -->
         <Button
             android:id="@+id/btnStart"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="16dp"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
             android:text="스캔 시작"
-            android:contentDescription="스캔 시작" />
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/green_button_background"
+            android:layout_marginStart="8dp" />
 
     </LinearLayout>
-</ScrollView>
+
+</LinearLayout>

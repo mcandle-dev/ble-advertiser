@@ -53,9 +53,16 @@
         </activity>
         <!-- 스캔 리스트 화면 추가 -->
         <activity
-            android:name=".ui.scan.ScanListActivity"
+            android:name=".scan.ScanListActivity"
             android:exported="false"
             android:label="Scan List" />
+            
+        <!-- 설정 화면 추가 -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="설정"
+            android:parentActivityName=".MainActivity" />
 
     </application>
 

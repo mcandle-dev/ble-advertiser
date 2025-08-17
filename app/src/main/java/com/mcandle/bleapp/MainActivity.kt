@@ -1,299 +1,252 @@
 package com.mcandle.bleapp
 
 import android.Manifest
-import android.app.AlertDialog
+import android.annotation.SuppressLint
+import android.bluetooth.le.ScanResult
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.view.LayoutInflater
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import android.view.LayoutInflater
+import androidx.appcompat.app.AlertDialog
+import android.view.Menu
+import android.view.MenuItem
+import android.content.Intent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
-import com.mcandle.bleapp.advertise.AdvertiserManager
 import com.mcandle.bleapp.databinding.ActivityMainBinding
 import com.mcandle.bleapp.scan.BleScannerManager
 import com.mcandle.bleapp.scan.IBeaconParser
-import com.mcandle.bleapp.ui.InputFormFragment
 import com.mcandle.bleapp.viewmodel.BleAdvertiseViewModel
-import kotlinx.coroutines.launch
-
-private const val TAG_MAIN = "MainActivityScan"
+import com.mcandle.bleapp.advertise.AdvertiserManager
+import com.mcandle.bleapp.util.SettingsManager
 
 class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
 
     private lateinit var binding: ActivityMainBinding
-    private lateinit var viewModel: BleAdvertiseViewModel
-
-    // 광고 / 스캔 매니저
+    private val viewModel: BleAdvertiseViewModel by viewModels()
+    private lateinit var scannerManager: BleScannerManager
     private lateinit var advertiserManager: AdvertiserManager
-    private lateinit var scanner: BleScannerManager
-
-    // 광고가 켜진 직후 자동 스캔을 1회만 트리거하기 위한 가드
-    private var autoScanAfterAdvTriggered = false
-
-    // 버튼 클릭으로 스캔 요청 후, 권한 허용 시점에 사용할 임시 보관
+    private lateinit var settingsManager: SettingsManager
     private var pendingPhone4: String? = null
 
-    // 권한 런처
-    private val permissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        val denied = results.entries.any { !it.value }
-        Log.d(TAG_MAIN, "permission result = $results (denied=$denied)")
-        if (denied) {
-            viewModel.onScanError("필수 권한이 거부되었습니다.")
-            pendingPhone4 = null
-            return@registerForActivityResult
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
+            val granted = perms.values.all { it }
+            if (granted) {
+                pendingPhone4?.let {
+                    startScan(it)
+                    pendingPhone4 = null
+                }
+            } else {
+                showToast("필수 권한이 거부되었습니다.")
+            }
         }
-        pendingPhone4?.let { phone4 ->
-            Log.d(TAG_MAIN, "permission OK -> startScan($phone4)")
-            startScan(phone4)
-        }
-        pendingPhone4 = null
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        viewModel = ViewModelProvider(this)[BleAdvertiseViewModel::class.java]
-
-        // 광고 매니저
+        settingsManager = SettingsManager(this)
+        // 설정에 따른 스캔 모드로 scannerManager 초기화
+        val scanMode = settingsManager.getScanFilter()
+        scannerManager = BleScannerManager(this, this, mode = scanMode)
         advertiserManager = AdvertiserManager(this, viewModel)
 
-        // 스캐너 (minor=3454 필터; 필요 없으면 null)
-        scanner = BleScannerManager(
-            context = this,
-            listener = this,
-            expectedMinor = 3454,
-            scanTimeoutMs = 15_000L
-        )
-        Log.d(TAG_MAIN, "scanner configured: expectedMinor=3454, timeout=15000ms")
-
-        // 입력 프래그먼트 (전화 4자리 + 스캔 시작 버튼)
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.inputFormFragmentContainer, InputFormFragment())
-            .commit()
-
-        // ───────── 광고 버튼/상태 ─────────
-        viewModel.isAdvertising.observe(this) { isAdv: Boolean ->
-            binding.btnStart.isEnabled = !isAdv
-            binding.btnStop.isEnabled = isAdv
-            binding.btnStart.text = if (isAdv) "적용중..." else "Advertise Start"
-            Log.d(TAG_MAIN, "isAdvertising changed: $isAdv")
-
-            // ✅ 광고가 막 켜졌다면 → 자동 스캔 1회 트리거
-            if (isAdv && !autoScanAfterAdvTriggered && !scanner.isScanning) {
-                val phone4 = viewModel.inputPhoneLast4.value.orEmpty()
-                Log.d(TAG_MAIN, "auto-scan trigger check: phone4='$phone4'")
-                if (phone4.length == 4 && phone4.all { it.isDigit() }) {
-                    autoScanAfterAdvTriggered = true      // 중복 트리거 방지
-                    pendingPhone4 = phone4                // 버튼 흐름과 동일한 권한/시작 경로 사용
-                    Log.d(TAG_MAIN, "auto-scan pending with phone4=$phone4 -> ensureScanPermissions()")
-                    ensureScanPermissions()               // 권한 있으면 startScan(phone4)
-                } else {
-                    showToast("전화번호 마지막 4자리를 먼저 입력하세요.")
-                }
-            }
-
-            // 광고가 꺼졌다면, 다음에 다시 켜질 때를 대비해 가드 리셋
-            if (!isAdv) {
-                autoScanAfterAdvTriggered = false
-            }
-        }
-
-        binding.btnStart.setOnClickListener {
-            val data = viewModel.currentData.value
-            if (data == null) {
-                showToast("패킷 데이터를 먼저 입력해주세요.")
-                return@setOnClickListener
-            }
-            if (!advertiserManager.isSupported()) {
-                showToast("BLE Advertise를 지원하지 않는 기기입니다.")
-                return@setOnClickListener
-            }
-            try {
-                Log.d(TAG_MAIN, "Advertise start requested with data=$data")
-                advertiserManager.startAdvertise(data)
-            } catch (se: SecurityException) {
-                showToast("광고 권한이 필요합니다. (Android 12+: BLUETOOTH_ADVERTISE)")
-            }
-        }
-
-        binding.btnStop.setOnClickListener {
-            Log.d(TAG_MAIN, "Advertise stop requested")
-            advertiserManager.stopAdvertise()
-        }
-        // ────────────────────────────────────────────────────────────────
-
-        // 프래그먼트의 '스캔 시작' 버튼 → ViewModel 이벤트 → 여기서만 권한/스캔
-        observeStartScanRequest()
-
-        // (옵션) 초기 권한 프롬프트
-        precheckPermissions()
+        setupButtons()
+        observeViewModel()
     }
 
-    // ViewModel의 스캔 시작 원샷 이벤트
-    private fun observeStartScanRequest() {
-        lifecycleScope.launch {
-            viewModel.startScanRequest.collect { phone4 ->
-                Log.d(TAG_MAIN, "startScanRequest from ViewModel: phone4=$phone4")
-                pendingPhone4 = phone4
-                ensureScanPermissions()
-            }
-        }
-    }
-
-    // 스캔 권한 체크/요청
-    private fun ensureScanPermissions() {
-        val need = if (Build.VERSION.SDK_INT >= 31) {
-            arrayOf(Manifest.permission.BLUETOOTH_SCAN)
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        }.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-
-        if (need.isNotEmpty()) {
-            Log.d(TAG_MAIN, "requesting permissions: $need")
-            permissionLauncher.launch(need.toTypedArray())
-        } else {
-            pendingPhone4?.let { phone4 ->
-                Log.d(TAG_MAIN, "permission already granted -> startScan($phone4)")
-                startScan(phone4)
-                pendingPhone4 = null
-            }
-        }
-    }
-
-    // (선택) 초기 권한 프롬프트 (광고+스캔 한 번에)
-    private fun precheckPermissions() {
-        val all = mutableListOf<String>()
+    private fun ensurePermissionsAndScan(phone4: String) {
+        val needed = mutableListOf<String>()
         if (Build.VERSION.SDK_INT >= 31) {
-            all += listOf(
-                Manifest.permission.BLUETOOTH_ADVERTISE,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN
-            )
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed.add(Manifest.permission.BLUETOOTH_SCAN)
         } else {
-            all += Manifest.permission.ACCESS_FINE_LOCATION
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed.add(Manifest.permission.ACCESS_FINE_LOCATION)
         }
-        val need = all.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
-        if (need.isNotEmpty()) {
-            Log.d(TAG_MAIN, "precheck requesting: $need")
-            permissionLauncher.launch(need.toTypedArray())
+
+        if (needed.isEmpty()) {
+            startScan(phone4)
+        } else {
+            pendingPhone4 = phone4
+            permissionLauncher.launch(needed.toTypedArray())
         }
     }
 
-    // 실제 스캔 시작: 버튼 → 권한 OK 이후에만 호출
-    private fun startScan(phoneLast4: String) {
-        if (viewModel.isScanning.value == true || scanner.isScanning) {
-            showToast("이미 스캔 중입니다.")
-            Log.d(TAG_MAIN, "startScan ignored - already scanning (vm=${viewModel.isScanning.value}, scanner=${scanner.isScanning})")
-            return
-        }
-        Log.d(TAG_MAIN, "startScan(phoneLast4=$phoneLast4)")
-        scanner.startScan(phoneLast4)
-        viewModel.setScanning(true)
+    @SuppressLint("MissingPermission")
+    private fun startScan(phone4: String) {
+        scannerManager.startScan(phone4)
+        Log.d("MainActivity", "스캔 시작 (phone4=$phone4)")
     }
 
-    private fun stopScan() {
-        Log.d(TAG_MAIN, "MainActivity.stopScan() called", Throwable("trace: MainActivity.stopScan"))
-        if (!scanner.isScanning) return
-        scanner.stopScan()
-        viewModel.setScanning(false)
-    }
-
-    // ───────── BleScannerManager.Listener ─────────
-
+    // 🔹 Listener 구현
     override fun onMatch(frame: IBeaconParser.IBeaconFrame) {
-        Log.d(
-            TAG_MAIN,
-            "onMatch: order=${frame.orderNumber}, phone4=${frame.phoneLast4}, major=${frame.major}, minor=${frame.minor}"
-        )
         viewModel.setScanning(false)
+        Log.d("MainActivity", "매칭 성공! order=${frame.orderNumber}, phone=${frame.phoneLast4}")
         showOrderDialog(frame)
     }
 
     override fun onInfo(message: String) {
-        Log.d(TAG_MAIN, "scanner info: $message")
+        Log.d("MainActivityScan", message)
         showToast(message)
     }
 
-    // ───────── 다이얼로그 표시 (업로드된 레이아웃의 실제 ID만 사용) ─────────
+    override fun onDeviceFound(result: ScanResult) {
+        val raw = result.scanRecord?.bytes?.joinToString(" ") { String.format("%02X", it) } ?: "N/A"
+        Log.d("MainActivityScan", """
+            ---- BLE Packet ----
+            Device Name : ${result.device.name ?: "N/A"}
+            MAC Address : ${result.device.address}
+            RSSI        : ${result.rssi}
+            Service UUIDs : ${result.scanRecord?.serviceUuids ?: "N/A"}
+            Raw Bytes   : $raw
+            --------------------
+        """.trimIndent())
+    }
+
     private fun showOrderDialog(frame: IBeaconParser.IBeaconFrame) {
-        val view = LayoutInflater.from(this).inflate(R.layout.order_detail_dialog, null, false)
-
-        // order_detail_dialog.xml 실제 ID 목록을 기준으로 세팅
-        val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
-        val tvStoreName = view.findViewById<TextView>(R.id.tvStoreName)
-        val tvPosId = view.findViewById<TextView>(R.id.tvPosId)
-        val tvStaffName = view.findViewById<TextView>(R.id.tvStaffName)
-        val tvAmount = view.findViewById<TextView>(R.id.tvAmount)
-        val tvPromotions = view.findViewById<TextView>(R.id.tvPromotions)
-        val tvRecommended = view.findViewById<TextView>(R.id.tvRecommended)
-        val tvPayAmount = view.findViewById<TextView>(R.id.tvPayAmount)
-
-        tvTitle?.text = "주문 확인"
-        // 의미상 재활용: 매장/POS/직원 필드에 스캔에서 얻은 핵심 값 표시
-        tvStoreName?.text = "주문번호: ${frame.orderNumber}"
-        tvPosId?.text = "전화 4자리: ${frame.phoneLast4}"
-        tvStaffName?.text = "신호: major=${frame.major}, minor=${frame.minor}"
-
-        // 아래 항목들은 필요하면 적절한 값으로 교체하세요(지금은 예시/더미)
-        tvAmount?.text = "금액: -"
-        tvPromotions?.text = ""
-        tvRecommended?.text = ""
-        tvPayAmount?.text = "[결제금액] -"
-
+        // 1단계: 결제 요청 도착 확인 팝업
+        showPaymentNotificationDialog(frame)
+    }
+    
+    private fun showPaymentNotificationDialog(frame: IBeaconParser.IBeaconFrame) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.payment_notification_dialog, null)
         val dialog = AlertDialog.Builder(this)
-            .setView(view)
+            .setView(dialogView)
             .setCancelable(false)
             .create()
-
-        // 하단 버튼: 실제 레이아웃에 존재하는 ID만 사용 (btnCancel, btnPay)
-        view.findViewById<Button>(R.id.btnCancel)?.setOnClickListener { dialog.dismiss() }
-        view.findViewById<Button>(R.id.btnPay)?.setOnClickListener {
-            // TODO: 결제/확정 로직이 있다면 여기에…
+            
+        dialogView.findViewById<android.widget.Button>(R.id.btnConfirm).setOnClickListener {
             dialog.dismiss()
+            // 2단계: 주문 확인 팝업 표시
+            showOrderDetailDialog(frame)
         }
-
+        
+        // 다이얼로그 배경을 투명하게 설정
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
     }
-
-    // ───────── 생명주기 정리 ─────────
-    override fun onStop() {
-        Log.d(TAG_MAIN, "onStop() -> stopScan()")
-        super.onStop()
-        if (scanner.isScanning) stopScan()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        advertiserManager.stopAdvertise()
-        if (scanner.isScanning) {
-            Log.d(TAG_MAIN, "onDestroy() -> stopScan()")
-            stopScan()
+    
+    private fun showOrderDetailDialog(frame: IBeaconParser.IBeaconFrame) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.payment_detail_dialog, null)
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+            
+        // 결제하기 버튼 클릭 이벤트
+        dialogView.findViewById<android.widget.Button>(R.id.btnPay).setOnClickListener {
+            dialog.dismiss()
+            showToast("결제가 완료되었습니다!")
         }
+        
+        // 다이얼로그 배경을 투명하게 설정
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialog.show()
+        
+        // 다이얼로그 크기 조정 (화면의 90% 너비 사용)
+        val displayMetrics = resources.displayMetrics
+        val width = (displayMetrics.widthPixels * 0.9).toInt()
+        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    // ───────── 유틸 ─────────
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private fun showToast(msg: CharSequence) {
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
-        } else {
-            mainHandler.post {
-                Toast.makeText(applicationContext, msg, Toast.LENGTH_SHORT).show()
+    private fun setupButtons() {
+        // Advertise Start 버튼
+        binding.btnStart.setOnClickListener {
+            // 현재 입력된 데이터를 가져와서 패킷 적용
+            val fragment = supportFragmentManager.findFragmentById(R.id.inputFormFragmentContainer) as? com.mcandle.bleapp.ui.InputFormFragment
+            if (fragment != null) {
+                val packetData = fragment.collectInputData()
+                if (packetData != null) {
+                    // ViewModel에 데이터 적용
+                    viewModel.updateData(
+                        packetData.cardNumber,
+                        packetData.phoneLast4,
+                        packetData.deviceName,
+                        packetData.encoding,
+                        packetData.advertiseMode
+                    )
+                    
+                    // Advertise 시작
+                    if (checkAdvertisePermissions()) {
+                        advertiserManager.startAdvertise(packetData)
+                        
+                        // Scan도 동시에 시작
+                        if (packetData.phoneLast4.isNotEmpty()) {
+                            ensurePermissionsAndScan(packetData.phoneLast4)
+                        }
+                    } else {
+                        requestAdvertisePermissions()
+                    }
+                } else {
+                    showToast("입력 데이터를 확인해주세요")
+                }
             }
         }
+        
+        // Advertise Stop 버튼
+        binding.btnStop.setOnClickListener {
+            advertiserManager.stopAdvertise()
+            scannerManager.stopScan()
+        }
+    }
+    
+    private fun observeViewModel() {
+        // Advertise 상태 관찰
+        viewModel.isAdvertising.observe(this) { advertising ->
+            binding.btnStart.isEnabled = !advertising
+            binding.btnStop.isEnabled = advertising
+            binding.btnStart.text = if (advertising) "광고 중..." else "Advertise Start"
+        }
+    }
+    
+    private fun checkAdvertisePermissions(): Boolean {
+        val needed = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        }
+        return needed.isEmpty()
+    }
+    
+    private fun requestAdvertisePermissions() {
+        val needed = mutableListOf<String>()
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE)
+                != PackageManager.PERMISSION_GRANTED
+            ) needed.add(Manifest.permission.BLUETOOTH_ADVERTISE)
+        }
+        if (needed.isNotEmpty()) {
+            permissionLauncher.launch(needed.toTypedArray())
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showToast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
