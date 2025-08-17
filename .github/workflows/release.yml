@@ -1,0 +1,74 @@
+name: Release Signed APK
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v2.1.0 등의 태그에서 실행
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+      
+    - name: Build Release APK
+      run: ./gradlew assembleRelease
+      
+    - name: Get version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: BLE Advertiser ${{ steps.version.outputs.VERSION }}
+        body: |
+          ## 🚀 BLE Advertiser & Scanner App ${{ steps.version.outputs.VERSION }}
+          
+          ### 📱 주요 기능
+          - 🔵 BLE Advertise (카드번호, 전화번호 광고)
+          - 🔍 BLE Scanner (iBeacon 매칭)
+          - 💳 2단계 결제 시스템
+          - ⚙️ 설정 관리 (스캔 필터 포함)
+          
+          ### 📦 다운로드
+          - **app-release-unsigned.apk**: 릴리즈 버전 (권장)
+          - **app-debug.apk**: 디버그 버전 (개발자용)
+          
+          ### 🔧 설치 방법
+          1. APK 파일 다운로드
+          2. Android 기기에서 "알 수 없는 소스" 허용
+          3. APK 설치 실행
+          
+          ### 📋 주요 변경사항
+          이 릴리즈의 새로운 기능과 버그 수정 사항을 확인하세요.
+          
+          🤖 자동 빌드됨 with GitHub Actions
+          
+        files: |
+          app/build/outputs/apk/release/app-release-unsigned.apk
+          app/build/outputs/apk/debug/app-debug.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
