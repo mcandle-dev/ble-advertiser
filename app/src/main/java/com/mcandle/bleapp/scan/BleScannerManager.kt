@@ -105,14 +105,23 @@ class BleScannerManager(
             val frame = IBeaconParser.parseFrom(result)
             if (frame != null) {
                 Log.d("BleScannerManager", "Parsed frame: order=${frame.orderNumber}, phone=${frame.phoneLast4}")
+                Log.d("BleScannerManager", "Expected phone: $expectedPhoneLast4, Frame phone: ${frame.phoneLast4}")
+                Log.d("BleScannerManager", "Phone match: ${frame.phoneLast4 == expectedPhoneLast4}")
 
                 if (expectedPhoneLast4 != null && frame.phoneLast4 == expectedPhoneLast4) {
                     if (expectedMinor == null || frame.minor == expectedMinor) {
                         matched = true
+                        Log.d("BleScannerManager", "매칭 성공! listener.onMatch() 호출")
                         listener.onMatch(frame)
                         stopScan()
+                    } else {
+                        Log.d("BleScannerManager", "Minor 불일치: expected=$expectedMinor, actual=${frame.minor}")
                     }
+                } else {
+                    Log.d("BleScannerManager", "전화번호 불일치 또는 expectedPhoneLast4가 null")
                 }
+            } else {
+                Log.d("BleScannerManager", "iBeacon 파싱 실패 - 일반 BLE 디바이스")
             }
         }
 

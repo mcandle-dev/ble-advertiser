@@ -23,7 +23,10 @@ class BleAdvertiseViewModel : ViewModel() {
 
     private val _isAdvertising = MutableLiveData(false)
     val isAdvertising: LiveData<Boolean> = _isAdvertising
-    fun setAdvertising(on: Boolean) { _isAdvertising.value = on }
+    fun setAdvertising(on: Boolean) { 
+        android.util.Log.d("BleAdvertiseViewModel", "setAdvertising($on) 호출")
+        _isAdvertising.value = on 
+    }
 
     private val _currentData = MutableLiveData<AdvertiseDataModel?>(null)
     val currentData: LiveData<AdvertiseDataModel?> = _currentData
@@ -74,7 +77,10 @@ class BleAdvertiseViewModel : ViewModel() {
 
     private val _isScanning = MutableLiveData(false)
     val isScanning: LiveData<Boolean> = _isScanning
-    fun setScanning(on: Boolean) { _isScanning.value = on }
+    fun setScanning(on: Boolean) { 
+        android.util.Log.d("BleAdvertiseViewModel", "setScanning($on) 호출")
+        _isScanning.value = on 
+    }
 
     // ---------------------------
     // 스캔 시작 원샷 이벤트

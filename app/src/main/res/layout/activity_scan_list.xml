@@ -5,17 +5,18 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- 전화번호 마지막 4자리 입력 -->
-    <EditText
-        android:id="@+id/etPhoneLast4"
+    <!-- 전화번호 표시 (입력 불가) -->
+    <TextView
+        android:id="@+id/tvPhoneDisplay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="전화번호 마지막 4자리"
-        android:inputType="number"
-        android:maxLength="4"
-        android:importantForAutofill="no"
-        android:imeOptions="actionDone"
-        android:singleLine="true"
+        android:text="전화번호: ****"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:padding="12dp"
+        android:background="#E3F2FD"
+        android:textColor="#1976D2"
+        android:gravity="center"
         android:layout_marginBottom="12dp" />
 
     <!-- 스캔 시작 버튼 -->

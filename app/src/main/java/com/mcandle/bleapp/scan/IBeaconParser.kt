@@ -11,6 +11,8 @@ object IBeaconParser {
     private const val TAG = "IBeaconParser"
 
     data class IBeaconFrame(
+        val companyId: Int,        // 제조사 ID
+        val uuid: String,          // 전체 UUID (16바이트)
         val orderNumber: String,   // 1~12자리 (space padding)
         val phoneLast4: String,    // 13~16자리
         val major: Int,
@@ -30,7 +32,7 @@ object IBeaconParser {
             if (data != null && data.size >= 23 &&
                 data[0] == 0x02.toByte() && data[1] == 0x15.toByte()
             ) {
-                return parse(data)
+                return parse(data, companyId)
             }
         }
         return null
@@ -39,7 +41,7 @@ object IBeaconParser {
     /**
      * iBeacon raw manufacturer data 파싱
      */
-    fun parse(data: ByteArray): IBeaconFrame? {
+    fun parse(data: ByteArray, companyId: Int = 0): IBeaconFrame? {
         if (data.size < 23) {
             Log.w(TAG, "Manufacturer data too short for iBeacon: ${data.size}")
             return null
@@ -48,6 +50,7 @@ object IBeaconParser {
             // iBeacon 구조: [0]=0x02, [1]=0x15, [2..17]=UUID(16B), [18..19]=Major, [20..21]=Minor, [22]=TxPower
             val uuidBytes = data.copyOfRange(2, 18)
             val uuidAscii = uuidBytes.toString(Charsets.US_ASCII)
+            val uuidHex = uuidBytes.joinToString("") { String.format("%02X", it) }
 
             val orderNumber = uuidAscii.substring(0, 12).trimEnd()
             val phoneLast4 = uuidAscii.substring(12, 16)
@@ -58,7 +61,7 @@ object IBeaconParser {
                 .order(ByteOrder.BIG_ENDIAN).short.toInt() and 0xFFFF
             val txPower = data[22].toInt()
 
-            return IBeaconFrame(orderNumber, phoneLast4, major, minor, txPower)
+            return IBeaconFrame(companyId, uuidHex, orderNumber, phoneLast4, major, minor, txPower)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse iBeacon: ${e.message}")
         }

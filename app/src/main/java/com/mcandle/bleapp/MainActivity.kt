@@ -14,6 +14,9 @@ import androidx.appcompat.app.AlertDialog
 import android.view.Menu
 import android.view.MenuItem
 import android.content.Intent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.IntentFilter
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -32,6 +35,18 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
     private lateinit var advertiserManager: AdvertiserManager
     private lateinit var settingsManager: SettingsManager
     private var pendingPhone4: String? = null
+    
+    // 결제 완료 브로드캐스트 리시버
+    private val paymentCompletedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.mcandle.bleapp.PAYMENT_COMPLETED") {
+                Log.d("MainActivity", "결제 완료 브로드캐스트 수신")
+                // 광고와 스캔 중지
+                stopAdvertiseAndScan()
+                showToast("결제가 완료되어 광고가 중지되었습니다.")
+            }
+        }
+    }
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
@@ -59,6 +74,15 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
 
         setupButtons()
         observeViewModel()
+        
+        // 결제 완료 브로드캐스트 리시버 등록 (Android 13+ 호환)
+        val filter = IntentFilter("com.mcandle.bleapp.PAYMENT_COMPLETED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(paymentCompletedReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(paymentCompletedReceiver, filter)
+        }
+        Log.d("MainActivity", "결제 완료 브로드캐스트 리시버 등록 완료")
     }
 
     private fun ensurePermissionsAndScan(phone4: String) {
@@ -89,13 +113,22 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
 
     // 🔹 Listener 구현
     override fun onMatch(frame: IBeaconParser.IBeaconFrame) {
-        viewModel.setScanning(false)
+        // 매칭 성공 시 스캔과 광고 모두 중단
         Log.d("MainActivity", "매칭 성공! order=${frame.orderNumber}, phone=${frame.phoneLast4}")
+        Log.d("MainActivity", "매칭 성공 - stopAdvertiseAndScan() 호출")
+        stopAdvertiseAndScan()
         showOrderDialog(frame)
     }
 
     override fun onInfo(message: String) {
         Log.d("MainActivityScan", message)
+        // 타임아웃이나 스캔 종료 시 광고와 스캔 모두 중지
+        if (message.contains("주변에서 일치하는 신호를 찾지 못했습니다") || 
+            message.contains("스캔 종료") || 
+            message.contains("스캔 실패")) {
+            Log.d("MainActivity", "타임아웃/실패 - 광고와 스캔 모두 중지")
+            stopAdvertiseAndScan()  // 광고와 스캔 모두 중지
+        }
         showToast(message)
     }
 
@@ -181,6 +214,7 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
                         
                         // Scan도 동시에 시작
                         if (packetData.phoneLast4.isNotEmpty()) {
+                            viewModel.setScanning(true) // 스캔 상태 설정
                             ensurePermissionsAndScan(packetData.phoneLast4)
                         }
                     } else {
@@ -194,17 +228,66 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
         
         // Advertise Stop 버튼
         binding.btnStop.setOnClickListener {
-            advertiserManager.stopAdvertise()
-            scannerManager.stopScan()
+            stopAdvertiseAndScan()
         }
+    }
+    
+    // 광고와 스캔을 모두 중지하는 공용 메서드
+    fun stopAdvertiseAndScan() {
+        Log.d("MainActivity", "stopAdvertiseAndScan() 시작")
+        
+        // 1. 실제 광고/스캔 중지
+        advertiserManager.stopAdvertise()
+        scannerManager.stopScan()
+        Log.d("MainActivity", "advertiserManager.stopAdvertise() 및 scannerManager.stopScan() 호출 완료")
+        
+        // 2. ViewModel 상태 업데이트
+        viewModel.setAdvertising(false)
+        viewModel.setScanning(false)
+        Log.d("MainActivity", "ViewModel 상태 업데이트 완료: advertising=false, scanning=false")
+        
+        // 3. UI 강제 업데이트
+        updateButtonUI()
+        Log.d("MainActivity", "updateButtonUI() 강제 호출 완료")
     }
     
     private fun observeViewModel() {
         // Advertise 상태 관찰
         viewModel.isAdvertising.observe(this) { advertising ->
-            binding.btnStart.isEnabled = !advertising
-            binding.btnStop.isEnabled = advertising
-            binding.btnStart.text = if (advertising) "광고 중..." else "Advertise Start"
+            updateButtonUI()
+        }
+        
+        // Scan 상태 관찰
+        viewModel.isScanning.observe(this) { scanning ->
+            updateButtonUI()
+        }
+    }
+    
+    private fun updateButtonUI() {
+        val advertising = viewModel.isAdvertising.value ?: false
+        val scanning = viewModel.isScanning.value ?: false
+        
+        Log.d("MainActivity", "updateButtonUI - advertising: $advertising, scanning: $scanning")
+        
+        when {
+            advertising && scanning -> {
+                binding.btnStart.text = "광고 중 (Scan 모드)"
+                binding.btnStart.isEnabled = false
+                binding.btnStop.isEnabled = true
+                Log.d("MainActivity", "버튼 상태: 광고 중 (Scan 모드)")
+            }
+            advertising -> {
+                binding.btnStart.text = "광고 중..."
+                binding.btnStart.isEnabled = false
+                binding.btnStop.isEnabled = true
+                Log.d("MainActivity", "버튼 상태: 광고 중...")
+            }
+            else -> {
+                binding.btnStart.text = "Advertise Start"
+                binding.btnStart.isEnabled = true
+                binding.btnStop.isEnabled = false
+                Log.d("MainActivity", "버튼 상태: Advertise Start")
+            }
         }
     }
     
@@ -248,5 +331,12 @@ class MainActivity : AppCompatActivity(), BleScannerManager.Listener {
 
     private fun showToast(msg: String) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        // 브로드캐스트 리시버 해제
+        unregisterReceiver(paymentCompletedReceiver)
+        Log.d("MainActivity", "브로드캐스트 리시버 해제 완료")
     }
 }

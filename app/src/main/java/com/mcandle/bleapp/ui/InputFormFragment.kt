@@ -1,5 +1,6 @@
 package com.mcandle.bleapp.ui
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -14,6 +15,7 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.activity.result.contract.ActivityResultContracts
 import com.mcandle.bleapp.databinding.FragmentInputFormBinding
 import com.mcandle.bleapp.databinding.RawPacketDialogBinding
 import com.mcandle.bleapp.model.AdvertiseMode
@@ -30,6 +32,14 @@ class InputFormFragment : Fragment() {
 
     private val viewModel: BleAdvertiseViewModel by activityViewModels()
     private lateinit var settingsManager: SettingsManager
+    
+    // ScanListActivity 실행용 launcher (간단한 방식)
+    private val scanActivityLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // 결과 처리는 MainActivity의 BroadcastReceiver에서 담당
+        android.util.Log.d("InputFormFragment", "ScanListActivity 종료됨")
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,11 +71,12 @@ class InputFormFragment : Fragment() {
             // ViewModel에도 값 반영
             viewModel.setPhoneLast4(phone4)
 
-            // ScanListActivity 실행
-            val intent = Intent(requireContext(), ScanListActivity::class.java).apply {
+            // ScanListActivity 실행 (결과 받기 위해 launcher 사용)
+            val intent = Intent().apply {
+                setClassName(requireContext(), "com.mcandle.bleapp.scan.ScanListActivity")
                 putExtra("PHONE_LAST4", phone4)
             }
-            startActivity(intent)
+            scanActivityLauncher.launch(intent)
         }
 
 
