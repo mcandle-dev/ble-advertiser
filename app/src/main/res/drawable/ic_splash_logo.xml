@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="400dp"
+    android:height="120dp"
+    android:viewportWidth="400"
+    android:viewportHeight="120">
+
+    <!-- 투명 배경 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0h400v120h-400z"/>
+
+    <!-- 왼쪽 원형 로고 부분 - 외부 원형 링들 (파란색 그라데이션) -->
+    <path
+        android:fillColor="#6bb6ff"
+        android:pathData="M60,10 C82.6,10 101,28.4 101,51 C101,73.6 82.6,92 60,92 C37.4,92 19,73.6 19,51 C19,28.4 37.4,10 60,10 Z M60,16 C40.1,16 24,32.1 24,52 C24,71.9 40.1,88 60,88 C79.9,88 96,71.9 96,52 C96,32.1 79.9,16 60,16 Z"/>
+    
+    <!-- 중간 원형 링 -->
+    <path
+        android:fillColor="#5ba7ff"
+        android:pathData="M60,18 C78.2,18 93,32.8 93,51 C93,69.2 78.2,84 60,84 C41.8,84 27,69.2 27,51 C27,32.8 41.8,18 60,18 Z M60,24 C44.5,24 32,36.5 32,52 C32,67.5 44.5,80 60,80 C75.5,80 88,67.5 88,52 C88,36.5 75.5,24 60,24 Z"/>
+    
+    <!-- 내부 원형 링 -->
+    <path
+        android:fillColor="#4a98ff"
+        android:pathData="M60,26 C73.8,26 85,37.2 85,51 C85,64.8 73.8,76 60,76 C46.2,76 35,64.8 35,51 C35,37.2 46.2,26 60,26 Z M60,32 C49.5,32 41,40.5 41,51 C41,61.5 49.5,70 60,70 C70.5,70 79,61.5 79,51 C79,40.5 70.5,32 60,32 Z"/>
+
+    <!-- 중앙 파란색 원 -->
+    <path
+        android:fillColor="#3d89ff"
+        android:pathData="M60,35 C68.3,35 75,41.7 75,50 C75,58.3 68.3,65 60,65 C51.7,65 45,58.3 45,50 C45,41.7 51.7,35 60,35 Z"/>
+
+    <!-- M 글자 (흰색) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M52,42 L52,60 L55,60 L55,48 L58,54 L62,54 L65,48 L65,60 L68,60 L68,42 L63,42 L60,50 L57,42 L52,42 Z"/>
+
+    <!-- "DEVICE & SERVICE" 텍스트 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M130,35 L135,35 Q140,35 140,40 L140,47 Q140,52 135,52 L130,52 L130,35 Z M132,37 L132,50 L135,50 Q138,50 138,47 L138,40 Q138,37 135,37 L132,37 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M145,35 L153,35 L153,37 L147,37 L147,42 L152,42 L152,44 L147,44 L147,50 L153,50 L153,52 L145,52 L145,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M158,35 L163,35 L166,47 L169,35 L174,35 L170,52 L162,52 L158,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M178,35 L180,35 L180,52 L178,52 L178,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M185,35 Q190,35 190,40 L190,47 Q190,52 185,52 L185,47 Q188,47 188,44 L188,43 Q188,40 185,40 L185,37 Q188,37 188,40 L190,40 Q190,35 185,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M195,35 L205,35 L205,37 L200,37 L200,42 L204,42 L204,44 L200,44 L200,50 L205,50 L205,52 L195,52 L195,35 Z"/>
+    
+    <!-- "&" 기호 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M215,35 Q220,35 220,40 Q220,43 218,44 Q220,45 220,48 Q220,52 215,52 Q210,52 210,48 Q210,45 212,44 Q210,43 210,40 Q210,35 215,35 Z M212,40 Q212,37 215,37 Q218,37 218,40 Q218,42 215,42 Q212,42 212,40 Z M212,48 Q212,50 215,50 Q218,50 218,48 Q218,46 215,46 Q212,46 212,48 Z"/>
+    
+    <!-- "SERVICE" 텍스트 -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M230,35 Q235,35 235,40 L235,37 Q235,35 230,35 L230,40 Q230,42 235,42 L235,47 Q235,52 230,52 L230,50 Q235,50 235,47 L235,42 L230,42 Q230,40 230,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M240,35 L248,35 L248,37 L242,37 L242,42 L247,42 L247,44 L242,44 L242,50 L248,50 L248,52 L240,52 L240,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M253,35 L258,35 Q263,35 263,40 L263,47 Q263,52 258,52 L253,52 L253,50 L258,50 Q261,50 261,47 L261,40 Q261,37 258,37 L253,37 L253,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M268,35 L276,35 L276,37 L270,37 L270,42 L275,42 L275,44 L270,44 L270,50 L276,50 L276,52 L268,52 L268,35 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M281,35 L286,35 Q291,35 291,40 L291,47 Q291,52 286,52 L281,52 L281,50 L286,50 Q289,50 289,47 L289,40 Q289,37 286,37 L281,37 L281,35 Z"/>
+
+    <!-- "candle" 메인 텍스트 (대형) -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M130,65 Q140,65 140,75 L140,85 Q140,95 130,95 L130,93 Q138,93 138,85 L138,75 Q138,67 130,67 L130,65 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M150,65 Q160,65 160,75 L160,85 Q160,95 150,95 L150,85 Q158,85 158,80 L158,75 Q158,67 150,67 L150,70 Q158,70 158,75 L160,75 Q160,65 150,65 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M170,65 L175,65 Q185,65 185,75 L185,85 Q185,95 175,95 L170,95 L170,93 L175,93 Q183,93 183,85 L183,75 Q183,67 175,67 L170,67 L170,65 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M195,65 Q205,65 205,75 L205,85 Q205,95 195,95 L195,93 Q203,93 203,85 L203,75 Q203,67 195,67 L195,70 Q203,70 203,75 L205,75 Q205,65 195,65 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M215,65 L217,65 L217,95 L215,95 L215,65 Z"/>
+    
+    <path
+        android:fillColor="#000000"
+        android:pathData="M225,65 L235,65 L235,67 L227,67 L227,78 L234,78 L234,80 L227,80 L227,93 L235,93 L235,95 L225,95 L225,65 Z"/>
+
+</vector>

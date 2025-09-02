@@ -59,6 +59,9 @@ dependencies {
 
     // Optional: Logging
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    
+    // Splash Screen API (Android 12+ 호환)
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // For local unit tests
     testImplementation(libs.junit)

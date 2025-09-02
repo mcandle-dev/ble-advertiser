@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- 배경 원형 -->
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="#2196F3"/>
+            <size android:width="200dp" android:height="200dp"/>
+        </shape>
+    </item>
+    
+    <!-- 내부 원형 -->
+    <item android:inset="8dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFFF"/>
+        </shape>
+    </item>
+    
+    <!-- 프로필 아이콘 -->
+    <item android:inset="40dp">
+        <shape android:shape="oval">
+            <solid android:color="#E91E63"/>
+        </shape>
+    </item>
+    
+    <!-- 중앙 텍스트 대신 심볼 -->
+    <item 
+        android:inset="60dp"
+        android:gravity="center">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF"/>
+            <corners android:radius="4dp"/>
+        </shape>
+    </item>
+    
+</layer-list>

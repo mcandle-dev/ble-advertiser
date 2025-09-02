@@ -9,6 +9,70 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- 카드번호 입력 섹션 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="📱 카드 정보"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#2196F3"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="카드번호 (16자리)"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etCardNumber"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="예: 1234567812345678"
+            android:maxLength="16"
+            android:inputType="number"
+            android:textSize="18sp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="전화번호 (마지막 4자리)"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etPhoneLast4"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:hint="예: 1234"
+            android:inputType="number"
+            android:maxLength="4"
+            android:digits="0123456789"
+            android:textSize="18sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp" />
+
+        <!-- 디바이스 설정 섹션 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⚙️ 디바이스 설정"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#FF9800"
+            android:layout_marginBottom="16dp" />
+
         <!-- 디바이스 이름 -->
         <TextView
             android:layout_width="match_parent"
@@ -126,6 +190,56 @@
                 android:text="IBEACON_RFSTAR" />
 
         </RadioGroup>
+
+        <!-- 구분선 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginVertical="16dp" />
+
+        <!-- 디버깅 도구 섹션 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="🔧 디버깅 도구"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:textColor="#4CAF50"
+            android:layout_marginBottom="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="24dp">
+
+            <Button
+                android:id="@+id/btnShowRaw"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="Raw Packet"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/gray_button_background"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnScanStart"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_weight="1"
+                android:text="스캔 시작"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/green_button_background"
+                android:layout_marginStart="8dp" />
+
+        </LinearLayout>
 
         <!-- 저장 버튼 -->
         <Button

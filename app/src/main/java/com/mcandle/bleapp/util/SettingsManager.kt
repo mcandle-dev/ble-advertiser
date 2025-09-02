@@ -11,16 +11,38 @@ class SettingsManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     
     companion object {
+        private const val KEY_CARD_NUMBER = "card_number"
+        private const val KEY_PHONE_LAST4 = "phone_last4"
         private const val KEY_DEVICE_NAME = "device_name"
         private const val KEY_ENCODING = "encoding"
         private const val KEY_ADVERTISE_MODE = "advertise_mode"
         private const val KEY_SCAN_FILTER = "scan_filter"
         
-        // 기본값들
+        // 기본값들 (테스트용)
+        const val DEFAULT_CARD_NUMBER = "1234567812345678"
+        const val DEFAULT_PHONE_LAST4 = "1234"
         const val DEFAULT_DEVICE_NAME = "mcandle"
         val DEFAULT_ENCODING = EncodingType.ASCII
         val DEFAULT_ADVERTISE_MODE = AdvertiseMode.DATA
         val DEFAULT_SCAN_FILTER = ScanMode.ALL
+    }
+    
+    // 카드번호
+    fun getCardNumber(): String {
+        return prefs.getString(KEY_CARD_NUMBER, DEFAULT_CARD_NUMBER) ?: DEFAULT_CARD_NUMBER
+    }
+    
+    fun setCardNumber(cardNumber: String) {
+        prefs.edit().putString(KEY_CARD_NUMBER, cardNumber).apply()
+    }
+    
+    // 전화번호 마지막 4자리
+    fun getPhoneLast4(): String {
+        return prefs.getString(KEY_PHONE_LAST4, DEFAULT_PHONE_LAST4) ?: DEFAULT_PHONE_LAST4
+    }
+    
+    fun setPhoneLast4(phoneLast4: String) {
+        prefs.edit().putString(KEY_PHONE_LAST4, phoneLast4).apply()
     }
     
     // 디바이스 이름

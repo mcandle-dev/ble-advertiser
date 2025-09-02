@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:oneshot="false">
+    
+    <!-- 파형 1단계 - 밝은 흰색 그라디언트 -->
+    <item android:duration="400">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="30dp"
+                android:startColor="#60FFFFFF"
+                android:endColor="#00FFFFFF"/>
+            <size android:width="80dp" android:height="80dp"/>
+        </shape>
+    </item>
+    
+    <!-- 파형 2단계 -->
+    <item android:duration="400">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="50dp"
+                android:startColor="#50FFFFFF"
+                android:endColor="#00FFFFFF"/>
+            <size android:width="120dp" android:height="120dp"/>
+        </shape>
+    </item>
+    
+    <!-- 파형 3단계 -->
+    <item android:duration="400">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="70dp"
+                android:startColor="#40FFFFFF"
+                android:endColor="#00FFFFFF"/>
+            <size android:width="160dp" android:height="160dp"/>
+        </shape>
+    </item>
+    
+    <!-- 파형 4단계 -->
+    <item android:duration="400">
+        <shape android:shape="oval">
+            <gradient
+                android:type="radial"
+                android:centerX="0.5"
+                android:centerY="0.5"
+                android:gradientRadius="90dp"
+                android:startColor="#30FFFFFF"
+                android:endColor="#00FFFFFF"/>
+            <size android:width="200dp" android:height="200dp"/>
+        </shape>
+    </item>
+    
+</animation-list>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- 배경 원 -->
+    <path
+        android:fillColor="#E8E8E8"
+        android:pathData="M100,100m-90,0a90,90 0,1 1,180 0a90,90 0,1 1,-180 0" />
+    
+    <!-- 사람 아이콘 -->
+    <path
+        android:fillColor="#757575"
+        android:pathData="M100,50c13.8,0 25,11.2 25,25s-11.2,25 -25,25s-25,-11.2 -25,-25S86.2,50 100,50z" />
+    
+    <path
+        android:fillColor="#757575"
+        android:pathData="M100,110c-27.6,0 -50,15.7 -50,35v15c0,2.8 2.2,5 5,5h90c2.8,0 5,-2.2 5,-5v-15C150,125.7 127.6,110 100,110z" />
+</vector>
