@@ -1,16 +1,18 @@
-# BLE Advertiser Android App
+# BLE Advertiser Android App (v2.0-dev)
 
-본 앱은 Android 단말을 BLE Advertiser(비콘 송신기)로 동작시키는 예제 앱입니다.  
-카드번호(16자리), 카카오페이 설치여부, 디바이스 이름을 입력받아 BLE 패킷에 포함하여 브로드캐스트하며,  
-EFR32BG22 등 BLE 수신기로 패킷을 실시간 확인할 수 있습니다.
+본 앱은 Android 단말을 BLE Advertiser(비콘 송신기)로 동작시키는 mCandle 결제 앱입니다.
+카드번호(16자리), 전화번호(4자리)를 입력받아 BLE 패킷에 포함하여 브로드캐스트하며,
+동시에 iBeacon 신호를 스캔하여 전화번호 매칭 시 결제 확인 다이얼로그를 표시합니다.
 
 ---
 
 ## 주요 기능
 
-- 카드번호, 카카오페이 설치여부, 디바이스 이름(기본값: mcandle) 입력 가능
-- BLE Advertise 패킷 송신 및 중지 (상태에 따라 버튼 활성/비활성 자동 전환)
-- ViewModel로 광고 상태/데이터 LiveData 관리
+- 카드번호(16자리) + 전화번호(4자리) 입력 및 BLE 광고
+- 동시 BLE 스캔으로 iBeacon 신호 감지 및 전화번호 매칭
+- 2단계 결제 다이얼로그 시스템 (알림 → 상세 정보)
+- ASCII/BCD 인코딩 선택, 스캔 필터 설정 (ALL/RFSTAR_ONLY/IBEACON_RFSTAR)
+- mCandle 브랜딩 UI 및 MVVM 아키텍처
 - Android 8.0(API 26)+, Android Studio Meerkat Feature Drop 이상 지원
 
 ---
