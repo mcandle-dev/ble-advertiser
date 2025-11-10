@@ -15,7 +15,6 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.activity.result.contract.ActivityResultContracts
 import com.mcandle.bleapp.databinding.FragmentInputFormBinding
 import com.mcandle.bleapp.databinding.RawPacketDialogBinding
 import com.mcandle.bleapp.model.AdvertiseMode

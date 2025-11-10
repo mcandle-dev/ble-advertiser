@@ -59,12 +59,7 @@
             android:exported="false"
             android:label="@string/app_name"
             android:theme="@style/Theme.BLEAdvertiser" />
-        <!-- 스캔 리스트 화면 추가 -->
-        <activity
-            android:name=".scan.ScanListActivity"
-            android:exported="false"
-            android:label="Scan List" />
-            
+
         <!-- 설정 화면 추가 -->
         <activity
             android:name=".SettingsActivity"
