@@ -17,22 +17,12 @@ import com.mcandle.bleapp.model.AdvertiseDataModel
 import com.mcandle.bleapp.model.AdvertiseMode
 import com.mcandle.bleapp.model.EncodingType
 import com.mcandle.bleapp.util.SettingsManager
-import com.mcandle.bleapp.scan.ScanMode
 import com.mcandle.bleapp.advertise.AdvertisePacketBuilder
-import com.mcandle.bleapp.scan.ScanListActivity
 
 class SettingsActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivitySettingsBinding
     private lateinit var settingsManager: SettingsManager
-    
-    // ScanListActivity 실행용 launcher
-    private val scanActivityLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // 결과 처리는 MainActivity의 BroadcastReceiver에서 담당
-        android.util.Log.d("SettingsActivity", "ScanListActivity 종료됨")
-    }
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,14 +58,6 @@ class SettingsActivity : AppCompatActivity() {
             AdvertiseMode.MINIMAL -> binding.rbMinimal.isChecked = true
             AdvertiseMode.DATA -> binding.rbData.isChecked = true
         }
-        
-        // Scan 필터 설정
-        when (settingsManager.getScanFilter()) {
-            ScanMode.ALL -> binding.rbAll.isChecked = true
-            ScanMode.RFSTAR_ONLY -> binding.rbRfstarOnly.isChecked = true
-            ScanMode.IBEACON_RFSTAR -> binding.rbIbeaconRfstar.isChecked = true
-            else -> binding.rbAll.isChecked = true  // 기타 모드는 ALL로 기본 설정
-        }
     }
     
     private fun setupButtons() {
@@ -107,21 +89,6 @@ class SettingsActivity : AppCompatActivity() {
                 dialog.show()
             }
         }
-        
-        // 스캔 시작 버튼
-        binding.btnScanStart.setOnClickListener {
-            val phone4 = binding.etPhoneLast4.text?.toString()?.trim()
-            if (phone4.isNullOrEmpty() || phone4.length != 4 || !phone4.all { it.isDigit() }) {
-                showToast("전화번호 4자리를 입력하세요.")
-                return@setOnClickListener
-            }
-
-            // ScanListActivity 실행
-            val intent = Intent(this, ScanListActivity::class.java).apply {
-                putExtra("PHONE_LAST4", phone4)
-            }
-            scanActivityLauncher.launch(intent)
-        }
     }
     
     private fun saveSettings() {
@@ -149,14 +116,6 @@ class SettingsActivity : AppCompatActivity() {
         // Advertise Mode
         val advMode = if (binding.rbMinimal.isChecked) AdvertiseMode.MINIMAL else AdvertiseMode.DATA
         settingsManager.setAdvertiseMode(advMode)
-        
-        // Scan 필터
-        val scanFilter = when {
-            binding.rbRfstarOnly.isChecked -> ScanMode.RFSTAR_ONLY
-            binding.rbIbeaconRfstar.isChecked -> ScanMode.IBEACON_RFSTAR
-            else -> ScanMode.ALL
-        }
-        settingsManager.setScanFilter(scanFilter)
     }
     
     private fun collectInputData(): AdvertiseDataModel? {

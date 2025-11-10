@@ -1,17 +1,17 @@
 # BLE Advertiser Android App (v2.0-dev)
 
-본 앱은 Android 단말을 BLE Advertiser(비콘 송신기)로 동작시키는 mCandle 결제 앱입니다.
+본 앱은 Android 단말을 BLE Advertiser(비콘 송신기) + GATT Server로 동작시키는 mCandle 결제 앱입니다.
 카드번호(16자리), 전화번호(4자리)를 입력받아 BLE 패킷에 포함하여 브로드캐스트하며,
-동시에 iBeacon 신호를 스캔하여 전화번호 매칭 시 결제 확인 다이얼로그를 표시합니다.
+동시에 GATT Server를 열어 외부 결제 단말기가 order_id를 전송하면 결제 확인 다이얼로그를 표시합니다.
 
 ---
 
 ## 주요 기능
 
 - 카드번호(16자리) + 전화번호(4자리) 입력 및 BLE 광고
-- 동시 BLE 스캔으로 iBeacon 신호 감지 및 전화번호 매칭
+- GATT Server로 외부 결제 단말기의 연결 및 order_id 수신
 - 2단계 결제 다이얼로그 시스템 (알림 → 상세 정보)
-- ASCII/BCD 인코딩 선택, 스캔 필터 설정 (ALL/RFSTAR_ONLY/IBEACON_RFSTAR)
+- ASCII/BCD 인코딩 선택, Advertise 모드 설정 (MINIMAL/DATA)
 - mCandle 브랜딩 UI 및 MVVM 아키텍처
 - Android 8.0(API 26)+, Android Studio Meerkat Feature Drop 이상 지원
 
