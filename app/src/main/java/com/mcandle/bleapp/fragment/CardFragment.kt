@@ -2,7 +2,7 @@ package com.mcandle.bleapp.fragment
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.bluetooth.le.ScanResult
+import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -24,25 +24,23 @@ import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import com.mcandle.bleapp.databinding.FragmentCardBinding
-import com.mcandle.bleapp.scan.BleScannerManager
-import com.mcandle.bleapp.scan.IBeaconParser
 import com.mcandle.bleapp.viewmodel.BleAdvertiseViewModel
 import com.mcandle.bleapp.advertise.AdvertiserManager
+import com.mcandle.bleapp.gatt.GattServerManager
 import com.mcandle.bleapp.util.SettingsManager
 import com.mcandle.bleapp.SettingsActivity
 import com.mcandle.bleapp.R
 import java.io.IOException
 
-class CardFragment : Fragment(), BleScannerManager.Listener {
+class CardFragment : Fragment(), GattServerManager.GattServerCallback {
 
     private var _binding: FragmentCardBinding? = null
     private val binding get() = _binding!!
     
     private val viewModel: BleAdvertiseViewModel by viewModels()
-    private lateinit var scannerManager: BleScannerManager
+    private lateinit var gattServerManager: GattServerManager
     private lateinit var advertiserManager: AdvertiserManager
     private lateinit var settingsManager: SettingsManager
-    private var pendingPhone4: String? = null
     private var scanTimer: CountDownTimer? = null
     private var pulseAnimation: AnimationDrawable? = null
     
@@ -51,25 +49,12 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "com.mcandle.bleapp.PAYMENT_COMPLETED") {
                 Log.d("CardFragment", "결제 완료 브로드캐스트 수신")
-                stopAdvertiseAndScan()
+                stopAdvertiseAndGatt()
                 showToast("결제가 완료되어 광고가 중지되었습니다.")
             }
         }
     }
     
-    private val permissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { perms ->
-            val granted = perms.values.all { it }
-            if (granted) {
-                pendingPhone4?.let {
-                    startScan(it)
-                    pendingPhone4 = null
-                }
-            } else {
-                showToast("필수 권한이 거부되었습니다.")
-            }
-        }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -81,11 +66,9 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        
+
         settingsManager = SettingsManager(requireContext())
-        // 설정에 따른 스캔 모드로 scannerManager 초기화
-        val scanMode = settingsManager.getScanFilter()
-        scannerManager = BleScannerManager(requireContext(), this, mode = scanMode)
+        gattServerManager = GattServerManager(requireContext(), this)
         advertiserManager = AdvertiserManager(requireContext(), viewModel)
 
         // Assets 폴더에서 이미지 로드
@@ -96,7 +79,7 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
         updateCardNumberDisplay()
         observeViewModel()
         
-        // 🔥 카드 탭 진입 시 즉시 BLE 시작 (버튼 없이)
+        // 🔥 카드 탭 진입 시 즉시 BLE Advertise + GATT Server 시작
         startInitialBleProcess()
         
         // 결제 완료 브로드캐스트 리시버 등록 (Android 13+ 호환)
@@ -148,78 +131,37 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
         }
     }
 
-    private fun ensurePermissionsAndScan(phone4: String) {
-        val needed = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= 31) {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.BLUETOOTH_SCAN)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed.add(Manifest.permission.BLUETOOTH_SCAN)
-        } else {
-            if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED
-            ) needed.add(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
+    // GATT Server Callbacks
+    override fun onOrderReceived(orderId: String, additionalData: Map<String, String>?) {
+        requireActivity().runOnUiThread {
+            Log.d("CardFragment", "Order received! orderId=$orderId, additionalData=$additionalData")
+            stopAdvertiseAndGatt()
 
-        if (needed.isEmpty()) {
-            startScan(phone4)
-        } else {
-            pendingPhone4 = phone4
-            permissionLauncher.launch(needed.toTypedArray())
-        }
-    }
-
-    @SuppressLint("MissingPermission")
-    private fun startScan(phone4: String) {
-        scannerManager.startScan(phone4)
-        Log.d("CardFragment", "스캔 시작 (phone4=$phone4)")
-    }
-
-    // 🔹 Listener 구현
-    override fun onMatch(frame: IBeaconParser.IBeaconFrame) {
-        // 매칭 성공 시 스캔과 광고 모두 중단
-        Log.d("CardFragment", "매칭 성공! order=${frame.orderNumber}, phone=${frame.phoneLast4}")
-        Log.d("CardFragment", "매칭 성공 - stopAdvertiseAndScan() 호출")
-        stopAdvertiseAndScan()
-        // 🔥 매칭 성공 후 버튼 표시
-        binding.btnToggle.visibility = View.VISIBLE
-        binding.btnToggle.text = "결제 시작"
-        showOrderDialog(frame)
-    }
-
-    override fun onInfo(message: String) {
-        Log.d("CardFragmentScan", message)
-        // 타임아웃이나 스캔 종료 시 광고와 스캔 모두 중지
-        if (message.contains("주변에서 일치하는 신호를 찾지 못했습니다") || 
-            message.contains("스캔 종료") || 
-            message.contains("스캔 실패")) {
-            Log.d("CardFragment", "타임아웃/실패 - 광고와 스캔 모두 중지")
-            stopAdvertiseAndScan()  // 광고와 스캔 모두 중지
-            // 🔥 스캔 실패/종료 후 버튼 표시
+            // 🔥 주문 수신 후 버튼 표시
             binding.btnToggle.visibility = View.VISIBLE
             binding.btnToggle.text = "결제 시작"
+
+            showOrderDialog(orderId, additionalData)
         }
-        showToast(message)
     }
 
-    override fun onDeviceFound(result: ScanResult) {
-        val raw = result.scanRecord?.bytes?.joinToString(" ") { String.format("%02X", it) } ?: "N/A"
-        Log.d("CardFragmentScan", """
-            ---- BLE Packet ----
-            Device Name : ${result.device.name ?: "N/A"}
-            MAC Address : ${result.device.address}
-            RSSI        : ${result.rssi}
-            Service UUIDs : ${result.scanRecord?.serviceUuids ?: "N/A"}
-            Raw Bytes   : $raw
-            --------------------
-        """.trimIndent())
+    override fun onClientConnected(device: BluetoothDevice) {
+        Log.d("CardFragment", "GATT client connected: ${device.address}")
+        requireActivity().runOnUiThread {
+            showToast("결제 단말기 연결됨")
+        }
     }
 
-    private fun showOrderDialog(frame: IBeaconParser.IBeaconFrame) {
+    override fun onClientDisconnected(device: BluetoothDevice) {
+        Log.d("CardFragment", "GATT client disconnected: ${device.address}")
+    }
+
+    private fun showOrderDialog(orderId: String, additionalData: Map<String, String>?) {
         // 1단계: 결제 요청 도착 확인 팝업
-        showPaymentNotificationDialog(frame)
+        showPaymentNotificationDialog(orderId, additionalData)
     }
-    
-    private fun showPaymentNotificationDialog(frame: IBeaconParser.IBeaconFrame) {
+
+    private fun showPaymentNotificationDialog(orderId: String, additionalData: Map<String, String>?) {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.payment_notification_dialog, null)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
@@ -229,15 +171,15 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
         dialogView.findViewById<android.widget.Button>(R.id.btnConfirm).setOnClickListener {
             dialog.dismiss()
             // 2단계: 주문 확인 팝업 표시
-            showOrderDetailDialog(frame)
+            showOrderDetailDialog(orderId, additionalData)
         }
-        
+
         // 다이얼로그 배경을 투명하게 설정
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         dialog.show()
     }
-    
-    private fun showOrderDetailDialog(frame: IBeaconParser.IBeaconFrame) {
+
+    private fun showOrderDetailDialog(orderId: String, additionalData: Map<String, String>?) {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.payment_detail_dialog, null)
         val dialog = AlertDialog.Builder(requireContext())
             .setView(dialogView)
@@ -260,11 +202,11 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
         dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    // 🔥 카드 탭 진입 시 즉시 BLE 시작하는 함수
+    // 🔥 카드 탭 진입 시 즉시 BLE Advertise + GATT Server 시작
     private fun startInitialBleProcess() {
         val cardNumber = settingsManager.getCardNumber()
         val phone4 = settingsManager.getPhoneLast4()
-        
+
         if (cardNumber.isEmpty() || phone4.isEmpty()) {
             showToast("설정에서 카드번호와 전화번호를 입력해주세요")
             // 설정이 없으면 버튼 표시
@@ -272,27 +214,27 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
             binding.btnToggle.text = "설정 확인 필요"
             return
         }
-        
+
         // 버튼 숨기고 즉시 BLE 시작
         binding.btnToggle.visibility = View.GONE
-        startAdvertiseAndScan(cardNumber, phone4)
-        Log.d("CardFragment", "카드 탭 진입 시 자동 BLE 시작")
+        startAdvertiseAndGatt(cardNumber, phone4)
+        Log.d("CardFragment", "카드 탭 진입 시 자동 BLE Advertise + GATT Server 시작")
     }
 
     private fun setupButtons() {
         binding.btnToggle.setOnClickListener {
             val cardNumber = settingsManager.getCardNumber()
             val phone4 = settingsManager.getPhoneLast4()
-            
+
             if (cardNumber.isEmpty() || phone4.isEmpty()) {
                 showToast("설정에서 카드번호와 전화번호를 입력해주세요")
                 return@setOnClickListener
             }
-            
-            // 버튼 클릭 시 버튼 숨기고 BLE 시작
+
+            // 버튼 클릭 시 버튼 숨기고 BLE Advertise + GATT Server 시작
             binding.btnToggle.visibility = View.GONE
-            startAdvertiseAndScan(cardNumber, phone4)
-            Log.d("CardFragment", "결제 시작 버튼 클릭 - BLE 재시작")
+            startAdvertiseAndGatt(cardNumber, phone4)
+            Log.d("CardFragment", "결제 시작 버튼 클릭 - BLE Advertise + GATT Server 재시작")
         }
     }
     
@@ -315,48 +257,52 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
     }
     
     @SuppressLint("MissingPermission")
-    private fun startAdvertiseAndScan(cardNumber: String, phone4: String) {
+    private fun startAdvertiseAndGatt(cardNumber: String, phone4: String) {
         // ViewModel 업데이트 - 전체 파라미터 전달
         val deviceName = settingsManager.getDeviceName()
-        val encoding = settingsManager.getEncodingType() 
+        val encoding = settingsManager.getEncodingType()
         val advMode = settingsManager.getAdvertiseMode()
         viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
         viewModel.setAdvertising(true)
-        viewModel.setScanning(true)
-        
+
         // 광고 시작
         val currentData = viewModel.currentData.value
         if (currentData != null) {
             advertiserManager.startAdvertise(currentData)
         }
-        
-        // 스캔 시작
-        ensurePermissionsAndScan(phone4)
-        
+
+        // GATT Server 시작
+        val gattStarted = gattServerManager.startGattServer()
+        if (gattStarted) {
+            Log.d("CardFragment", "GATT Server 시작 성공")
+        } else {
+            Log.e("CardFragment", "GATT Server 시작 실패")
+            showToast("GATT Server 시작 실패")
+        }
+
         // 시각적 효과 시작
-        startScanningEffects()
-        
-        Log.d("CardFragment", "광고 및 스캔 시작 - 카드: $cardNumber, 폰: $phone4")
+        startWaitingEffects()
+
+        Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
     }
-    
-    private fun stopAdvertiseAndScan() {
+
+    private fun stopAdvertiseAndGatt() {
         viewModel.setAdvertising(false)
-        viewModel.setScanning(false)
         advertiserManager.stopAdvertise()
-        scannerManager.stopScan()
-        
+        gattServerManager.stopGattServer()
+
         // 시각적 효과 중지
-        stopScanningEffects()
-        
-        Log.d("CardFragment", "광고 및 스캔 중지")
+        stopWaitingEffects()
+
+        Log.d("CardFragment", "광고 및 GATT Server 중지")
     }
     
-    private fun startScanningEffects() {
+    private fun startWaitingEffects() {
         // 파형 애니메이션 시작
         binding.ivPulseAnimation.visibility = View.VISIBLE
         pulseAnimation = binding.ivPulseAnimation.drawable as? AnimationDrawable
         pulseAnimation?.start()
-        
+
         // 카운트다운 타이머 시작 (60초)
         binding.tvScanTimer.visibility = View.VISIBLE
         scanTimer?.cancel()
@@ -367,9 +313,9 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
             }
             override fun onFinish() {
                 binding.tvScanTimer.text = "0"
-                stopScanningEffects()
-                // 타임아웃 시 스캔과 광고 중지
-                stopAdvertiseAndScan()
+                stopWaitingEffects()
+                // 타임아웃 시 광고와 GATT Server 중지
+                stopAdvertiseAndGatt()
                 // 🔥 카운트 종료 후 "결제 시작" 버튼 표시
                 binding.btnToggle.visibility = View.VISIBLE
                 binding.btnToggle.text = "결제 시작"
@@ -377,25 +323,21 @@ class CardFragment : Fragment(), BleScannerManager.Listener {
             }
         }.start()
     }
-    
-    private fun stopScanningEffects() {
+
+    private fun stopWaitingEffects() {
         // 파형 애니메이션 중지
         pulseAnimation?.stop()
         binding.ivPulseAnimation.visibility = View.GONE
-        
+
         // 카운트다운 타이머 중지
         scanTimer?.cancel()
         binding.tvScanTimer.visibility = View.GONE
     }
     
     private fun observeViewModel() {
-        // ViewModel 상태 관찰은 유지하지만 버튼 상태는 수동으로 관리
+        // ViewModel 상태 관찰
         viewModel.isAdvertising.observe(viewLifecycleOwner) { advertising ->
             Log.d("CardFragment", "Advertising 상태: $advertising")
-        }
-        
-        viewModel.isScanning.observe(viewLifecycleOwner) { scanning ->
-            Log.d("CardFragment", "Scanning 상태: $scanning")
         }
     }
 

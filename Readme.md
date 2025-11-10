@@ -12,6 +12,7 @@ EFR32BG22 등 BLE 수신기로 패킷을 실시간 확인할 수 있습니다.
 - BLE Advertise 패킷 송신 및 중지 (상태에 따라 버튼 활성/비활성 자동 전환)
 - ViewModel로 광고 상태/데이터 LiveData 관리
 - Android 8.0(API 26)+, Android Studio Meerkat Feature Drop 이상 지원
+- v2.0 GATT 지원 
 
 ---
 
