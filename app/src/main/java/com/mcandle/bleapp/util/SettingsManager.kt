@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.mcandle.bleapp.model.AdvertiseMode
 import com.mcandle.bleapp.model.EncodingType
-import com.mcandle.bleapp.scan.ScanMode
 
 class SettingsManager(context: Context) {
     
@@ -16,15 +15,13 @@ class SettingsManager(context: Context) {
         private const val KEY_DEVICE_NAME = "device_name"
         private const val KEY_ENCODING = "encoding"
         private const val KEY_ADVERTISE_MODE = "advertise_mode"
-        private const val KEY_SCAN_FILTER = "scan_filter"
-        
+
         // 기본값들 (테스트용)
         const val DEFAULT_CARD_NUMBER = "1234567812345678"
         const val DEFAULT_PHONE_LAST4 = "1234"
         const val DEFAULT_DEVICE_NAME = "mcandle"
         val DEFAULT_ENCODING = EncodingType.ASCII
         val DEFAULT_ADVERTISE_MODE = AdvertiseMode.DATA
-        val DEFAULT_SCAN_FILTER = ScanMode.ALL
     }
     
     // 카드번호
@@ -80,19 +77,5 @@ class SettingsManager(context: Context) {
     
     fun setAdvertiseMode(mode: AdvertiseMode) {
         prefs.edit().putString(KEY_ADVERTISE_MODE, mode.name).apply()
-    }
-    
-    // Scan 필터 모드
-    fun getScanFilter(): ScanMode {
-        val modeName = prefs.getString(KEY_SCAN_FILTER, DEFAULT_SCAN_FILTER.name) ?: DEFAULT_SCAN_FILTER.name
-        return try {
-            ScanMode.valueOf(modeName)
-        } catch (e: IllegalArgumentException) {
-            DEFAULT_SCAN_FILTER
-        }
-    }
-    
-    fun setScanFilter(mode: ScanMode) {
-        prefs.edit().putString(KEY_SCAN_FILTER, mode.name).apply()
     }
 }
