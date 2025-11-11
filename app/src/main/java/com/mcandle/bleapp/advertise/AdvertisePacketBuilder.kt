@@ -42,8 +42,10 @@ object AdvertisePacketBuilder {
     }
 
     fun buildScanResponse(data: AdvertiseDataModel): AdvertiseData {
+        val gattServiceUuid = ParcelUuid.fromString("0000FFF0-0000-1000-8000-00805F9B34FB")
         return AdvertiseData.Builder()
             .setIncludeDeviceName(true)
+            .addServiceUuid(gattServiceUuid)
             .build()
     }
 

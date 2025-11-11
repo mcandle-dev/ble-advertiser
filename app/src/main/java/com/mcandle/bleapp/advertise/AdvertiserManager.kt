@@ -42,7 +42,7 @@ class AdvertiserManager(
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
-            .setConnectable(false)
+            .setConnectable(true)
             .build()
 
         advertiser.startAdvertising(settings, advData, scanResp, advertiseCallback)

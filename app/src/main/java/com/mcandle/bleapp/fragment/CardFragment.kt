@@ -185,7 +185,10 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
             .setView(dialogView)
             .setCancelable(true)
             .create()
-            
+
+        // 주문번호 표시
+        dialogView.findViewById<android.widget.TextView>(R.id.tvOrderNumber).text = "주문번호: $orderId"
+
         // 결제하기 버튼 클릭 이벤트
         dialogView.findViewById<android.widget.Button>(R.id.btnPay).setOnClickListener {
             dialog.dismiss()
