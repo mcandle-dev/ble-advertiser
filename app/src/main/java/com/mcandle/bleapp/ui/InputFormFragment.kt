@@ -15,14 +15,12 @@ import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.activity.result.contract.ActivityResultContracts
 import com.mcandle.bleapp.databinding.FragmentInputFormBinding
 import com.mcandle.bleapp.databinding.RawPacketDialogBinding
 import com.mcandle.bleapp.model.AdvertiseMode
 import com.mcandle.bleapp.model.EncodingType
 import com.mcandle.bleapp.viewmodel.BleAdvertiseViewModel
 import com.mcandle.bleapp.advertise.AdvertisePacketBuilder
-import com.mcandle.bleapp.scan.ScanListActivity
 import com.mcandle.bleapp.util.SettingsManager
 import kotlinx.coroutines.launch
 
@@ -32,14 +30,6 @@ class InputFormFragment : Fragment() {
 
     private val viewModel: BleAdvertiseViewModel by activityViewModels()
     private lateinit var settingsManager: SettingsManager
-    
-    // ScanListActivity 실행용 launcher (간단한 방식)
-    private val scanActivityLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // 결과 처리는 MainActivity의 BroadcastReceiver에서 담당
-        android.util.Log.d("InputFormFragment", "ScanListActivity 종료됨")
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -60,25 +50,9 @@ class InputFormFragment : Fragment() {
         //     viewModel.setPhoneLast4(text?.toString().orEmpty())
         // }
 
-        // [수정] 스캔 시작 버튼
-        binding.btnStart?.setOnClickListener {
-            val phone4 = binding.etPhoneLast4.text?.toString()?.trim()
-            if (phone4.isNullOrEmpty() || phone4.length != 4 || !phone4.all { it.isDigit() }) {
-                toast("전화번호 4자리를 입력하세요.")
-                return@setOnClickListener
-            }
-
-            // ViewModel에도 값 반영
-            viewModel.setPhoneLast4(phone4)
-
-            // ScanListActivity 실행 (결과 받기 위해 launcher 사용)
-            val intent = Intent().apply {
-                setClassName(requireContext(), "com.mcandle.bleapp.scan.ScanListActivity")
-                putExtra("PHONE_LAST4", phone4)
-            }
-            scanActivityLauncher.launch(intent)
-        }
-
+        // [v2.0] 스캔 기능 제거됨 - GATT Server로 대체
+        // 버튼 핸들러는 제거되었으나, 레이아웃에서 사용 시 null-safe 처리
+        binding.btnStart?.visibility = View.GONE
 
         // RAW 보기 버튼
         binding.btnShowRaw.setOnClickListener {
@@ -103,13 +77,8 @@ class InputFormFragment : Fragment() {
             }
         }
 
-        // 스캔 상태 관찰
-        viewModel.isScanning.observe(viewLifecycleOwner) { scanning ->
-            binding.etCardNumber.isEnabled = !scanning
-            binding.etPhoneLast4.isEnabled = !scanning
-            binding.btnShowRaw.isEnabled = !scanning
-            binding.btnStart?.isEnabled = !scanning
-        }
+        // [v2.0] 스캔 상태 관찰 제거됨 - GATT Server 아키텍처로 변경
+        // 필요 시 CardFragment에서 GATT 연결 상태를 관찰
 
         // 사용자 메시지 수집
         viewLifecycleOwner.lifecycleScope.launch {

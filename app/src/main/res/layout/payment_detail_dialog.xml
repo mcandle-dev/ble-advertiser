@@ -40,6 +40,16 @@
 
         </LinearLayout>
 
+        <!-- 주문번호 -->
+        <TextView
+            android:id="@+id/tvOrderNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="주문번호: -"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="16dp" />
+
         <!-- 매장 정보 -->
         <TextView
             android:layout_width="wrap_content"
