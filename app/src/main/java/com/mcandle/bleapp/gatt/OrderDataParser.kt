@@ -6,9 +6,8 @@ import java.nio.charset.Charset
 /**
  * GATT Write 데이터 파싱 유틸리티
  *
- * 지원 포맷:
- * 1. Simple: "order_id=12345678"
- * 2. With params: "order_id=12345678&phone=1234&amount=15000"
+ * Scanner에서 전송된 데이터를 그대로 orderId로 사용
+ * 예: "wdfgy" → orderId = "wdfgy"
  */
 object OrderDataParser {
 
@@ -24,38 +23,22 @@ object OrderDataParser {
      *
      * @param data GATT Write로 받은 ByteArray
      * @return OrderRequest 객체
-     * @throws IllegalArgumentException order_id가 없거나 형식이 잘못된 경우
+     * @throws IllegalArgumentException 데이터가 비어있는 경우
      */
     fun parse(data: ByteArray): OrderRequest {
-        val dataString = String(data, Charset.forName("UTF-8"))
+        val dataString = String(data, Charset.forName("UTF-8")).trim()
         Log.d(TAG, "Parsing data: $dataString")
 
-        // URL 파라미터 형식 파싱 (key=value&key=value)
-        val params = try {
-            dataString.split("&").associate {
-                val parts = it.split("=", limit = 2)
-                if (parts.size != 2) {
-                    throw IllegalArgumentException("Invalid parameter format: $it")
-                }
-                parts[0].trim() to parts[1].trim()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse data: $dataString", e)
-            throw IllegalArgumentException("Invalid data format: ${e.message}")
+        if (dataString.isEmpty()) {
+            throw IllegalArgumentException("Data is empty")
         }
 
-        // order_id는 필수
-        val orderId = params["order_id"]
-            ?: throw IllegalArgumentException("order_id is required")
-
-        // order_id를 제외한 나머지 데이터
-        val additionalData = params.filter { it.key != "order_id" }
-
-        Log.d(TAG, "Parsed - orderId: $orderId, additionalData: $additionalData")
+        // 넘어온 데이터를 그대로 orderId로 사용
+        Log.d(TAG, "Parsed - orderId: $dataString")
 
         return OrderRequest(
-            orderId = orderId,
-            additionalData = if (additionalData.isNotEmpty()) additionalData else null
+            orderId = dataString,
+            additionalData = null
         )
     }
 

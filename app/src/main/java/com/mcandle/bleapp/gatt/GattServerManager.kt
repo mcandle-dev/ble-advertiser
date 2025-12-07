@@ -11,6 +11,7 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.Context
 import android.util.Log
+import java.nio.charset.Charset
 
 /**
  * GATT Server 관리 클래스
@@ -28,6 +29,11 @@ class GattServerManager(
     }
 
     interface GattServerCallback {
+        /**
+         * AT+CONNECT 명령어를 수신했을 때 호출
+         */
+        fun onConnectCommandReceived(device: BluetoothDevice)
+
         /**
          * Order 데이터가 수신되었을 때 호출
          *
@@ -169,12 +175,37 @@ class GattServerManager(
             offset: Int,
             value: ByteArray
         ) {
+            val dataString = String(value, Charset.forName("UTF-8"))
             Log.d(TAG, "Write request from ${device.address}")
             Log.d(TAG, "Characteristic UUID: ${characteristic.uuid}")
-            Log.d(TAG, "Data: ${String(value)}")
+            Log.d(TAG, "Data: $dataString")
 
             try {
                 if (characteristic.uuid == GattServiceConfig.CHAR_ORDER_WRITE_UUID) {
+                    // AT+CONNECT 명령어 확인
+                    if (dataString.trim().equals("AT+CONNECT", ignoreCase = true)) {
+                        Log.d(TAG, "AT+CONNECT command received")
+
+                        // 콜백 호출
+                        callback.onConnectCommandReceived(device)
+
+                        // 응답 설정
+                        val response = OrderDataParser.createResponse(true, "Connected")
+                        setResponse(response)
+
+                        // Write 응답
+                        if (responseNeeded) {
+                            bluetoothGattServer?.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_SUCCESS,
+                                offset,
+                                value
+                            )
+                        }
+                        return
+                    }
+
                     // order_id 파싱
                     try {
                         val orderRequest = OrderDataParser.parse(value)
@@ -191,7 +222,7 @@ class GattServerManager(
                         if (responseNeeded) {
                             bluetoothGattServer?.sendResponse(
                                 device,
-                                requestId,
+                                 requestId,
                                 BluetoothGatt.GATT_SUCCESS,
                                 offset,
                                 value

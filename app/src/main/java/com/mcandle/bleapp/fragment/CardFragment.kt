@@ -42,6 +42,8 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     private lateinit var advertiserManager: AdvertiserManager
     private lateinit var settingsManager: SettingsManager
     private var scanTimer: CountDownTimer? = null
+    private var connectedTimer: CountDownTimer? = null
+    private var isConnected: Boolean = false
     private var pulseAnimation: AnimationDrawable? = null
     
     // 결제 완료 브로드캐스트 리시버
@@ -106,6 +108,7 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
             Log.e("CardFragment", "브로드캐스트 리시버 해제 중 오류: ${e.message}")
         }
         scanTimer?.cancel()
+        connectedTimer?.cancel()
         _binding = null
     }
     
@@ -132,12 +135,36 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     }
 
     // GATT Server Callbacks
+    override fun onConnectCommandReceived(device: BluetoothDevice) {
+        Log.d("CardFragment", "AT+CONNECT command received from: ${device.address}")
+        requireActivity().runOnUiThread {
+            // 초기 타이머 취소
+            scanTimer?.cancel()
+
+            // 연결 상태로 전환
+            isConnected = true
+            binding.tvScanTimer.text = "연결됨"
+
+            // 연결 후 60초 타이머 시작
+            startConnectedTimer()
+
+            showToast("결제 단말기 연결됨")
+            Log.d("CardFragment", "AT+CONNECT - 초기 타이머 취소, 연결 타이머 시작")
+        }
+    }
+
     override fun onOrderReceived(orderId: String, additionalData: Map<String, String>?) {
         requireActivity().runOnUiThread {
             Log.d("CardFragment", "Order received! orderId=$orderId, additionalData=$additionalData")
+
+            // 🔥 모든 타이머 취소
+            scanTimer?.cancel()
+            connectedTimer?.cancel()
+            isConnected = false
+
             stopAdvertiseAndGatt()
 
-            // 🔥 주문 수신 후 버튼 표시
+            // 주문 수신 후 버튼 표시
             binding.btnToggle.visibility = View.VISIBLE
             binding.btnToggle.text = "결제 시작"
 
@@ -147,13 +174,30 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
 
     override fun onClientConnected(device: BluetoothDevice) {
         Log.d("CardFragment", "GATT client connected: ${device.address}")
-        requireActivity().runOnUiThread {
-            showToast("결제 단말기 연결됨")
-        }
+        // 물리적 연결만 로그, AT+CONNECT 명령어를 기다림
     }
 
     override fun onClientDisconnected(device: BluetoothDevice) {
         Log.d("CardFragment", "GATT client disconnected: ${device.address}")
+        requireActivity().runOnUiThread {
+            if (isConnected) {
+                Log.d("CardFragment", "연결 해제 감지 - 즉시 종료")
+                isConnected = false
+
+                // 연결 타이머 취소
+                connectedTimer?.cancel()
+
+                // 광고/GATT 중지 및 UI 초기화
+                stopWaitingEffects()
+                stopAdvertiseAndGatt()
+
+                // 버튼 표시
+                binding.btnToggle.visibility = View.VISIBLE
+                binding.btnToggle.text = "결제 시작"
+
+                showToast("연결이 해제되어 종료되었습니다")
+            }
+        }
     }
 
     private fun showOrderDialog(orderId: String, additionalData: Map<String, String>?) {
@@ -297,6 +341,10 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         // 시각적 효과 중지
         stopWaitingEffects()
 
+        // 연결 상태 초기화
+        isConnected = false
+        connectedTimer?.cancel()
+
         Log.d("CardFragment", "광고 및 GATT Server 중지")
     }
     
@@ -325,6 +373,39 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
                 Log.d("CardFragment", "카운트다운 종료 - 결제 시작 버튼 표시")
             }
         }.start()
+    }
+
+    private fun startConnectedTimer() {
+        // 기존 연결 타이머가 있으면 취소
+        connectedTimer?.cancel()
+
+        connectedTimer = object : CountDownTimer(60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                // 카운트다운 표시 없이 "연결됨" 유지
+                // (필요시 로그만 기록)
+                if (millisUntilFinished % 10000 == 0L) {
+                    Log.d("CardFragment", "연결 타이머 남은 시간: ${millisUntilFinished / 1000}초")
+                }
+            }
+
+            override fun onFinish() {
+                Log.d("CardFragment", "연결 타이머 종료 - 60초 내 주문 데이터 미수신")
+                requireActivity().runOnUiThread {
+                    binding.tvScanTimer.text = "0"
+                    isConnected = false
+                    stopWaitingEffects()
+                    stopAdvertiseAndGatt()
+
+                    // 버튼 표시
+                    binding.btnToggle.visibility = View.VISIBLE
+                    binding.btnToggle.text = "결제 시작"
+
+                    showToast("타임아웃으로 종료되었습니다")
+                }
+            }
+        }.start()
+
+        Log.d("CardFragment", "연결 후 60초 타이머 시작")
     }
 
     private fun stopWaitingEffects() {
