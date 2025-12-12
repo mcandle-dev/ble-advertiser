@@ -111,6 +111,11 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         }
         scanTimer?.cancel()
         connectedTimer?.cancel()
+
+        // 🔥 Fragment 파괴 시 반드시 advertise/GATT 중지
+        stopAdvertiseAndGatt()
+        Log.d("CardFragment", "onDestroy - advertise/GATT 중지 완료")
+
         _binding = null
     }
     
@@ -335,32 +340,39 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     
     @SuppressLint("MissingPermission")
     private fun startAdvertiseAndGatt(cardNumber: String, phone4: String) {
-        // ViewModel 업데이트 - 전체 파라미터 전달
-        val deviceName = settingsManager.getDeviceName()
-        val encoding = settingsManager.getEncodingType()
-        val advMode = settingsManager.getAdvertiseMode()
-        viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
-        viewModel.setAdvertising(true)
+        // 🔥 1. 기존 advertise/GATT가 있으면 무조건 먼저 중지
+        stopAdvertiseAndGatt()
+        Log.d("CardFragment", "기존 advertise/GATT 중지 후 100ms 대기")
 
-        // 광고 시작
-        val currentData = viewModel.currentData.value
-        if (currentData != null) {
-            advertiserManager.startAdvertise(currentData)
-        }
+        // 🔥 2. 잠깐 대기 (이전 advertise 완전 종료 대기)
+        Handler(Looper.getMainLooper()).postDelayed({
+            // ViewModel 업데이트 - 전체 파라미터 전달
+            val deviceName = settingsManager.getDeviceName()
+            val encoding = settingsManager.getEncodingType()
+            val advMode = settingsManager.getAdvertiseMode()
+            viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
+            viewModel.setAdvertising(true)
 
-        // GATT Server 시작
-        val gattStarted = gattServerManager.startGattServer()
-        if (gattStarted) {
-            Log.d("CardFragment", "GATT Server 시작 성공")
-        } else {
-            Log.e("CardFragment", "GATT Server 시작 실패")
-            showToast("GATT Server 시작 실패")
-        }
+            // 광고 시작
+            val currentData = viewModel.currentData.value
+            if (currentData != null) {
+                advertiserManager.startAdvertise(currentData)
+            }
 
-        // 시각적 효과 시작
-        startWaitingEffects()
+            // GATT Server 시작
+            val gattStarted = gattServerManager.startGattServer()
+            if (gattStarted) {
+                Log.d("CardFragment", "GATT Server 시작 성공")
+            } else {
+                Log.e("CardFragment", "GATT Server 시작 실패")
+                showToast("GATT Server 시작 실패")
+            }
 
-        Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
+            // 시각적 효과 시작
+            startWaitingEffects()
+
+            Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
+        }, 100) // 100ms delay
     }
 
     private fun stopAdvertiseAndGatt() {
