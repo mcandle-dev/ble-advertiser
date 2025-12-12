@@ -1,7 +1,11 @@
 name: Build Android APK
 
 on:
-  workflow_dispatch:  # 수동 실행만 가능 (모든 브랜치)
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # 수동 실행도 가능 (모든 브랜치)
 
 jobs:
   build:
