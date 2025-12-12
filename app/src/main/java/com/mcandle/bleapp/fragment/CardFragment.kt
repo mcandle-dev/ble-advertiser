@@ -1,15 +1,12 @@
 package com.mcandle.bleapp.fragment
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import android.content.Intent
@@ -22,7 +19,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import com.mcandle.bleapp.databinding.FragmentCardBinding
@@ -47,22 +43,6 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     private var connectedTimer: CountDownTimer? = null
     private var isConnected: Boolean = false
     private var pulseAnimation: AnimationDrawable? = null
-
-    // 블루투스 권한 요청 런처
-    private val bluetoothPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        if (allGranted) {
-            Log.d("CardFragment", "모든 블루투스 권한 승인됨")
-            startInitialBleProcess()
-        } else {
-            Log.w("CardFragment", "블루투스 권한이 거부됨")
-            showToast("블루투스 권한이 필요합니다")
-            binding.btnToggle.visibility = View.VISIBLE
-            binding.btnToggle.text = "권한 설정 필요"
-        }
-    }
 
     // 결제 완료 브로드캐스트 리시버
     private val paymentCompletedReceiver = object : BroadcastReceiver() {
@@ -99,8 +79,8 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         updateCardNumberDisplay()
         observeViewModel()
 
-        // 🔥 블루투스 권한 체크 후 BLE 시작
-        checkBluetoothPermissionsAndStart()
+        // 🔥 카드 탭 진입 시 즉시 BLE Advertise + GATT Server 시작
+        startInitialBleProcess()
 
         // 결제 완료 브로드캐스트 리시버 등록 (Android 13+ 호환)
         val filter = IntentFilter("com.mcandle.bleapp.PAYMENT_COMPLETED")
@@ -154,42 +134,6 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
             Log.e("CardFragment", "Assets 이미지 로드 실패: ${e.message}")
             // 기본 drawable로 fallback
             binding.ivCard.setImageResource(R.drawable.jasmin_black_card_real)
-        }
-    }
-
-    /**
-     * 블루투스 권한 체크 및 요청
-     */
-    private fun checkBluetoothPermissionsAndStart() {
-        val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Android 12 이상
-            arrayOf(
-                Manifest.permission.BLUETOOTH_ADVERTISE,
-                Manifest.permission.BLUETOOTH_CONNECT,
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        } else {
-            // Android 12 미만
-            arrayOf(
-                Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        }
-
-        val missingPermissions = requiredPermissions.filter {
-            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (missingPermissions.isEmpty()) {
-            // 모든 권한이 있으면 바로 시작
-            Log.d("CardFragment", "모든 블루투스 권한이 이미 승인됨")
-            startInitialBleProcess()
-        } else {
-            // 권한 요청
-            Log.d("CardFragment", "블루투스 권한 요청: ${missingPermissions.joinToString()}")
-            bluetoothPermissionLauncher.launch(missingPermissions.toTypedArray())
         }
     }
 
