@@ -21,7 +21,7 @@ class SettingsManager(context: Context) {
         const val DEFAULT_PHONE_LAST4 = "1234"
         const val DEFAULT_DEVICE_NAME = "mcandle"
         val DEFAULT_ENCODING = EncodingType.ASCII
-        val DEFAULT_ADVERTISE_MODE = AdvertiseMode.DATA
+        val DEFAULT_ADVERTISE_MODE = AdvertiseMode.MINIMAL
     }
     
     // 카드번호
