@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:  # 🔥 수동 실행 가능 (모든 브랜치)
 
 jobs:
   build:
