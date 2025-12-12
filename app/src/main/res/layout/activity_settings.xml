@@ -152,45 +152,6 @@
                 android:checked="true"/>
         </RadioGroup>
 
-        <!-- Scan 데이터 필터 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Scan 데이터"
-            android:textStyle="bold"
-            android:textSize="16sp"
-            android:layout_marginBottom="8dp" />
-
-        <RadioGroup
-            android:id="@+id/rgScanFilter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="32dp">
-
-            <RadioButton
-                android:id="@+id/rbAll"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ALL"
-                android:layout_marginBottom="4dp"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/rbRfstarOnly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="RFSTAR_ONLY"
-                android:layout_marginBottom="4dp" />
-
-            <RadioButton
-                android:id="@+id/rbIbeaconRfstar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="IBEACON_RFSTAR" />
-
-        </RadioGroup>
-
         <!-- 구분선 -->
         <View
             android:layout_width="match_parent"
@@ -208,38 +169,16 @@
             android:textColor="#4CAF50"
             android:layout_marginBottom="16dp" />
 
-        <LinearLayout
+        <Button
+            android:id="@+id/btnShowRaw"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginBottom="24dp">
-
-            <Button
-                android:id="@+id/btnShowRaw"
-                android:layout_width="0dp"
-                android:layout_height="56dp"
-                android:layout_weight="1"
-                android:text="Raw Packet"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/gray_button_background"
-                android:layout_marginEnd="8dp" />
-
-            <Button
-                android:id="@+id/btnScanStart"
-                android:layout_width="0dp"
-                android:layout_height="56dp"
-                android:layout_weight="1"
-                android:text="스캔 시작"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/green_button_background"
-                android:layout_marginStart="8dp" />
-
-        </LinearLayout>
+            android:layout_height="56dp"
+            android:text="Raw Packet"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/gray_button_background"
+            android:layout_marginBottom="24dp" />
 
         <!-- 저장 버튼 -->
         <Button

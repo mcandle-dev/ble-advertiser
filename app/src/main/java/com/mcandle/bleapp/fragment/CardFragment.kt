@@ -18,6 +18,8 @@ import android.content.Context
 import android.content.IntentFilter
 import android.graphics.drawable.AnimationDrawable
 import android.os.CountDownTimer
+import android.os.Handler
+import android.os.Looper
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.core.content.ContextCompat
@@ -143,13 +145,41 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
 
             // 연결 상태로 전환
             isConnected = true
-            binding.tvScanTimer.text = "연결됨"
+            binding.tvScanTimer.text = "Connect"
 
             // 연결 후 60초 타이머 시작
             startConnectedTimer()
 
             showToast("결제 단말기 연결됨")
             Log.d("CardFragment", "AT+CONNECT - 초기 타이머 취소, 연결 타이머 시작")
+        }
+    }
+
+    override fun onDisconnectCommandReceived(device: BluetoothDevice) {
+        Log.d("CardFragment", "AT+DISCONNECT command received from: ${device.address}")
+        requireActivity().runOnUiThread {
+            // 모든 타이머 취소
+            scanTimer?.cancel()
+            connectedTimer?.cancel()
+
+            // "Disconnect" 표시
+            binding.tvScanTimer.text = "Disconnect"
+            isConnected = false
+
+            Log.d("CardFragment", "AT+DISCONNECT - Disconnect 표시, 1초 후 정리")
+
+            // 1초 후 UI 정리 및 버튼 표시
+            Handler(Looper.getMainLooper()).postDelayed({
+                stopWaitingEffects()
+                stopAdvertiseAndGatt()
+
+                // 버튼 표시
+                binding.btnToggle.visibility = View.VISIBLE
+                binding.btnToggle.text = "결제 시작"
+
+                showToast("연결이 해제되었습니다")
+                Log.d("CardFragment", "AT+DISCONNECT - 정리 완료, 결제 시작 버튼 표시")
+            }, 1000)  // 1초 delay
         }
     }
 
