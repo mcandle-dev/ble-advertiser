@@ -47,7 +47,23 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     private var connectedTimer: CountDownTimer? = null
     private var isConnected: Boolean = false
     private var pulseAnimation: AnimationDrawable? = null
-    
+
+    // 블루투스 권한 요청 런처
+    private val bluetoothPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        if (allGranted) {
+            Log.d("CardFragment", "모든 블루투스 권한 승인됨")
+            startInitialBleProcess()
+        } else {
+            Log.w("CardFragment", "블루투스 권한이 거부됨")
+            showToast("블루투스 권한이 필요합니다")
+            binding.btnToggle.visibility = View.VISIBLE
+            binding.btnToggle.text = "권한 설정 필요"
+        }
+    }
+
     // 결제 완료 브로드캐스트 리시버
     private val paymentCompletedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -82,10 +98,10 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         setupSettingsButton()
         updateCardNumberDisplay()
         observeViewModel()
-        
-        // 🔥 카드 탭 진입 시 즉시 BLE Advertise + GATT Server 시작
-        startInitialBleProcess()
-        
+
+        // 🔥 블루투스 권한 체크 후 BLE 시작
+        checkBluetoothPermissionsAndStart()
+
         // 결제 완료 브로드캐스트 리시버 등록 (Android 13+ 호환)
         val filter = IntentFilter("com.mcandle.bleapp.PAYMENT_COMPLETED")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -111,6 +127,11 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         }
         scanTimer?.cancel()
         connectedTimer?.cancel()
+
+        // 🔥 Fragment 파괴 시 반드시 advertise/GATT 중지
+        stopAdvertiseAndGatt()
+        Log.d("CardFragment", "onDestroy - advertise/GATT 중지 완료")
+
         _binding = null
     }
     
@@ -133,6 +154,42 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
             Log.e("CardFragment", "Assets 이미지 로드 실패: ${e.message}")
             // 기본 drawable로 fallback
             binding.ivCard.setImageResource(R.drawable.jasmin_black_card_real)
+        }
+    }
+
+    /**
+     * 블루투스 권한 체크 및 요청
+     */
+    private fun checkBluetoothPermissionsAndStart() {
+        val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12 이상
+            arrayOf(
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        } else {
+            // Android 12 미만
+            arrayOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+        }
+
+        val missingPermissions = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isEmpty()) {
+            // 모든 권한이 있으면 바로 시작
+            Log.d("CardFragment", "모든 블루투스 권한이 이미 승인됨")
+            startInitialBleProcess()
+        } else {
+            // 권한 요청
+            Log.d("CardFragment", "블루투스 권한 요청: ${missingPermissions.joinToString()}")
+            bluetoothPermissionLauncher.launch(missingPermissions.toTypedArray())
         }
     }
 
@@ -335,32 +392,39 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     
     @SuppressLint("MissingPermission")
     private fun startAdvertiseAndGatt(cardNumber: String, phone4: String) {
-        // ViewModel 업데이트 - 전체 파라미터 전달
-        val deviceName = settingsManager.getDeviceName()
-        val encoding = settingsManager.getEncodingType()
-        val advMode = settingsManager.getAdvertiseMode()
-        viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
-        viewModel.setAdvertising(true)
+        // 🔥 1. 기존 advertise/GATT가 있으면 무조건 먼저 중지
+        stopAdvertiseAndGatt()
+        Log.d("CardFragment", "기존 advertise/GATT 중지 후 100ms 대기")
 
-        // 광고 시작
-        val currentData = viewModel.currentData.value
-        if (currentData != null) {
-            advertiserManager.startAdvertise(currentData)
-        }
+        // 🔥 2. 잠깐 대기 (이전 advertise 완전 종료 대기)
+        Handler(Looper.getMainLooper()).postDelayed({
+            // ViewModel 업데이트 - 전체 파라미터 전달
+            val deviceName = settingsManager.getDeviceName()
+            val encoding = settingsManager.getEncodingType()
+            val advMode = settingsManager.getAdvertiseMode()
+            viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
+            viewModel.setAdvertising(true)
 
-        // GATT Server 시작
-        val gattStarted = gattServerManager.startGattServer()
-        if (gattStarted) {
-            Log.d("CardFragment", "GATT Server 시작 성공")
-        } else {
-            Log.e("CardFragment", "GATT Server 시작 실패")
-            showToast("GATT Server 시작 실패")
-        }
+            // 광고 시작
+            val currentData = viewModel.currentData.value
+            if (currentData != null) {
+                advertiserManager.startAdvertise(currentData)
+            }
 
-        // 시각적 효과 시작
-        startWaitingEffects()
+            // GATT Server 시작
+            val gattStarted = gattServerManager.startGattServer()
+            if (gattStarted) {
+                Log.d("CardFragment", "GATT Server 시작 성공")
+            } else {
+                Log.e("CardFragment", "GATT Server 시작 실패")
+                showToast("GATT Server 시작 실패")
+            }
 
-        Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
+            // 시각적 효과 시작
+            startWaitingEffects()
+
+            Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
+        }, 100) // 100ms delay
     }
 
     private fun stopAdvertiseAndGatt() {

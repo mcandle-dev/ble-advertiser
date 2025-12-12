@@ -70,13 +70,14 @@ object AdvertisePacketBuilder {
     }
 
     private  fun makeMinimalUuid(cardNumber: String, phoneLast4: String): String {
-        val part1 = cardNumber.substring(0, 8)
-        val part2 = cardNumber.substring(8, 12)
-        val part3 = cardNumber.substring(12, 16)
-        val part4 = phoneLast4
-        val base = "00805F9B34FB"
+        // UUID 구조: 8-4-4-4-12
+        // 카드번호(16) + 0000(4) + 전화번호(4) + 고정값(8) = 32자리
+        val part1 = cardNumber.substring(0, 8)      // 카드번호 앞 8자리
+        val part2 = cardNumber.substring(8, 12)     // 카드번호 중간 4자리
+        val part3 = cardNumber.substring(12, 16)    // 카드번호 뒤 4자리
+        val part4 = "0000"                          // 중간 패딩 0000
+        val part5 = phoneLast4 + "00805F9B"         // 전화번호 4자리 + 고정값 8자리
 
-        return "$part1-$part2-$part3-$part4-$base"
-
+        return "$part1-$part2-$part3-$part4-$part5"
     }
 }

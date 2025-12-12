@@ -142,14 +142,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Minimal"
-                android:layout_marginEnd="24dp" />
+                android:layout_marginEnd="24dp"
+                android:checked="true"/>
 
             <RadioButton
                 android:id="@+id/rbData"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Data"
-                android:checked="true"/>
+                android:text="Data" />
         </RadioGroup>
 
         <!-- 구분선 -->
