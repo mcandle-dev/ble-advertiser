@@ -35,6 +35,11 @@ class GattServerManager(
         fun onConnectCommandReceived(device: BluetoothDevice)
 
         /**
+         * AT+DISCONNECT 명령어를 수신했을 때 호출
+         */
+        fun onDisconnectCommandReceived(device: BluetoothDevice)
+
+        /**
          * Order 데이터가 수신되었을 때 호출
          *
          * @param orderId 주문 ID
@@ -191,6 +196,30 @@ class GattServerManager(
 
                         // 응답 설정
                         val response = OrderDataParser.createResponse(true, "Connected")
+                        setResponse(response)
+
+                        // Write 응답
+                        if (responseNeeded) {
+                            bluetoothGattServer?.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_SUCCESS,
+                                offset,
+                                value
+                            )
+                        }
+                        return
+                    }
+
+                    // AT+DISCONNECT 명령어 확인
+                    if (dataString.trim().equals("AT+DISCONNECT", ignoreCase = true)) {
+                        Log.d(TAG, "AT+DISCONNECT command received")
+
+                        // 콜백 호출
+                        callback.onDisconnectCommandReceived(device)
+
+                        // 응답 설정
+                        val response = OrderDataParser.createResponse(true, "Disconnected")
                         setResponse(response)
 
                         // Write 응답
