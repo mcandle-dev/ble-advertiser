@@ -30,6 +30,14 @@ class GattServerManager(
 
     interface GattServerCallback {
         /**
+         * GATT Server와 Service가 준비 완료되었을 때 호출
+         * 이 콜백 이후에 BLE Advertise를 시작해야 함
+         *
+         * @param success Service 등록 성공 여부
+         */
+        fun onGattServerReady(success: Boolean)
+
+        /**
          * AT+CONNECT 명령어를 수신했을 때 호출
          */
         fun onConnectCommandReceived(device: BluetoothDevice)
@@ -68,12 +76,14 @@ class GattServerManager(
     /**
      * GATT Server 시작
      *
-     * @return 성공 여부
+     * Service 등록이 완료되면 onGattServerReady() 콜백이 호출됨
+     * 콜백 이후에 BLE Advertise를 시작해야 Race Condition 방지
      */
-    fun startGattServer(): Boolean {
+    fun startGattServer() {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
             Log.e(TAG, "Bluetooth is not available or not enabled")
-            return false
+            callback.onGattServerReady(false)
+            return
         }
 
         try {
@@ -81,7 +91,8 @@ class GattServerManager(
 
             if (bluetoothGattServer == null) {
                 Log.e(TAG, "Failed to open GATT server")
-                return false
+                callback.onGattServerReady(false)
+                return
             }
 
             // Service 생성
@@ -106,22 +117,22 @@ class GattServerManager(
             )
             service.addCharacteristic(responseCharacteristic!!)
 
-            // Service를 GATT Server에 추가
+            // Service를 GATT Server에 추가 (비동기)
+            // onServiceAdded 콜백에서 결과 확인
             val result = bluetoothGattServer?.addService(service) ?: false
 
-            if (result) {
-                Log.d(TAG, "GATT Server started successfully")
+            if (!result) {
+                Log.e(TAG, "Failed to initiate addService()")
+                callback.onGattServerReady(false)
+            } else {
+                Log.d(TAG, "addService() initiated, waiting for onServiceAdded callback...")
                 Log.d(TAG, "Service UUID: ${GattServiceConfig.SERVICE_UUID}")
                 Log.d(TAG, "Write Char UUID: ${GattServiceConfig.CHAR_ORDER_WRITE_UUID}")
                 Log.d(TAG, "Read Char UUID: ${GattServiceConfig.CHAR_RESPONSE_READ_UUID}")
-            } else {
-                Log.e(TAG, "Failed to add service to GATT server")
             }
-
-            return result
         } catch (e: SecurityException) {
             Log.e(TAG, "Security exception starting GATT server", e)
-            return false
+            callback.onGattServerReady(false)
         }
     }
 
@@ -149,6 +160,17 @@ class GattServerManager(
     }
 
     private val gattServerCallback = object : BluetoothGattServerCallback() {
+
+        override fun onServiceAdded(status: Int, service: BluetoothGattService) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.d(TAG, "✅ Service added successfully: ${service.uuid}")
+                Log.d(TAG, "GATT Server is ready. Safe to start advertising now.")
+                callback.onGattServerReady(true)
+            } else {
+                Log.e(TAG, "❌ Failed to add service: status=$status")
+                callback.onGattServerReady(false)
+            }
+        }
 
         override fun onConnectionStateChange(
             device: BluetoothDevice,
