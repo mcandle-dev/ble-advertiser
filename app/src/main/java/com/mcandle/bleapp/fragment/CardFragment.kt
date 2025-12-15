@@ -138,6 +138,36 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     }
 
     // GATT Server Callbacks
+    override fun onGattServerReady(success: Boolean) {
+        requireActivity().runOnUiThread {
+            if (success) {
+                Log.d("CardFragment", "✅ GATT Server 준비 완료 - 이제 Advertise 시작")
+
+                // GATT Server가 준비되었으므로 이제 안전하게 Advertise 시작
+                val currentData = viewModel.currentData.value
+                if (currentData != null) {
+                    advertiserManager.startAdvertise(currentData)
+                    Log.d("CardFragment", "BLE Advertise 시작 완료")
+
+                    // 시각적 효과 시작
+                    startWaitingEffects()
+                } else {
+                    Log.e("CardFragment", "ViewModel 데이터가 null입니다")
+                    showToast("데이터 오류가 발생했습니다")
+                    stopAdvertiseAndGatt()
+                    binding.btnToggle.visibility = View.VISIBLE
+                    binding.btnToggle.text = "결제 시작"
+                }
+            } else {
+                Log.e("CardFragment", "❌ GATT Server 시작 실패")
+                showToast("GATT Server 시작 실패")
+                stopAdvertiseAndGatt()
+                binding.btnToggle.visibility = View.VISIBLE
+                binding.btnToggle.text = "결제 시작"
+            }
+        }
+    }
+
     override fun onConnectCommandReceived(device: BluetoothDevice) {
         Log.d("CardFragment", "AT+CONNECT command received from: ${device.address}")
         requireActivity().runOnUiThread {
@@ -340,7 +370,7 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         stopAdvertiseAndGatt()
         Log.d("CardFragment", "기존 advertise/GATT 중지 후 100ms 대기")
 
-        // 🔥 2. 잠깐 대기 (이전 advertise 완전 종료 대기)
+        // 🔥 2. 잠깐 대기 (이전 advertise/GATT 완전 종료 대기)
         Handler(Looper.getMainLooper()).postDelayed({
             // ViewModel 업데이트 - 전체 파라미터 전달
             val deviceName = settingsManager.getDeviceName()
@@ -349,25 +379,16 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
             viewModel.updateData(cardNumber, phone4, deviceName, encoding, advMode)
             viewModel.setAdvertising(true)
 
-            // 광고 시작
-            val currentData = viewModel.currentData.value
-            if (currentData != null) {
-                advertiserManager.startAdvertise(currentData)
-            }
+            // 🔥 3. GATT Server를 먼저 시작 (비동기)
+            // onServiceAdded 콜백에서 Service 등록 완료를 확인한 후
+            // onGattServerReady()에서 Advertise 시작
+            Log.d("CardFragment", "🚀 GATT Server 시작 (Service 등록 대기 중...)")
+            gattServerManager.startGattServer()
 
-            // GATT Server 시작
-            val gattStarted = gattServerManager.startGattServer()
-            if (gattStarted) {
-                Log.d("CardFragment", "GATT Server 시작 성공")
-            } else {
-                Log.e("CardFragment", "GATT Server 시작 실패")
-                showToast("GATT Server 시작 실패")
-            }
+            // ⚠️ Advertise는 onGattServerReady() 콜백에서 시작됨
+            // 이렇게 하면 Race Condition 방지 (Android 15 요구사항)
 
-            // 시각적 효과 시작
-            startWaitingEffects()
-
-            Log.d("CardFragment", "광고 및 GATT Server 시작 - 카드: $cardNumber, 폰: $phone4")
+            Log.d("CardFragment", "GATT Server 시작 요청 완료 - 카드: $cardNumber, 폰: $phone4")
         }, 100) // 100ms delay
     }
 
