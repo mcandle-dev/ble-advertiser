@@ -100,7 +100,7 @@ class AdvertiserManager(
 
         val parameters = AdvertisingSetParameters.Builder()
             // ✅ Legacy Mode 강제 (AOSP 11 Scanner 호환을 위해 필수!)
-            .setLegacy(true)
+            .setLegacyMode(true)
 
             // Connectable 설정 (GATT 연결 허용)
             .setConnectable(true)
