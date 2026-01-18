@@ -138,7 +138,7 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     }
 
     // GATT Server Callbacks
-    override fun onGattServerReady(success: Boolean) {
+    override fun onGattServerReady(success: Boolean, errorMessage: String?) {
         requireActivity().runOnUiThread {
             if (success) {
                 Log.d("CardFragment", "✅ GATT Server 준비 완료 - 이제 Advertise 시작")
@@ -159,8 +159,9 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
                     binding.btnToggle.text = "결제 시작"
                 }
             } else {
-                Log.e("CardFragment", "❌ GATT Server 시작 실패")
-                showToast("GATT Server 시작 실패")
+                val errorMsg = errorMessage ?: "GATT Server 초기화 실패 (원인 불명)"
+                Log.e("CardFragment", "❌ GATT Server 시작 실패: $errorMsg")
+                showToast("오류: $errorMsg")
                 stopAdvertiseAndGatt()
                 binding.btnToggle.visibility = View.VISIBLE
                 binding.btnToggle.text = "결제 시작"
@@ -216,8 +217,23 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
 
     override fun onOrderReceived(orderId: String, additionalData: Map<String, String>?) {
         requireActivity().runOnUiThread {
-            Log.d("CardFragment", "Order received! orderId=$orderId, additionalData=$additionalData")
+            Log.d("CardFragment", "Order received! raw=$orderId, additionalData=$additionalData")
 
+            // 1. 접두사 제거 (order_id= or ORDER_ID=)
+            var cleanOrderId = orderId.trim()
+            if (cleanOrderId.startsWith("order_id=", ignoreCase = true)) {
+                cleanOrderId = cleanOrderId.substring("order_id=".length).trim()
+            }
+
+            Log.d("CardFragment", "Cleaned orderId: $cleanOrderId")
+
+            // 2. finish 명령어 확인
+            if (cleanOrderId.equals("finish", ignoreCase = true)) {
+                handlePaymentFinish()
+                return@runOnUiThread
+            }
+
+            // 3. 일반 주문 처리
             // 🔥 모든 타이머 취소
             scanTimer?.cancel()
             connectedTimer?.cancel()
@@ -225,12 +241,103 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
 
             stopAdvertiseAndGatt()
 
-            // 주문 수신 후 버튼 표시
-            binding.btnToggle.visibility = View.VISIBLE
-            binding.btnToggle.text = "결제 시작"
-
-            showOrderDialog(orderId, additionalData)
+            // 주문 수신 시 상세 화면으로 전환
+            showPaymentDetail(cleanOrderId)
         }
+    }
+
+    private fun showPaymentDetail(orderId: String) {
+        Log.d("CardFragment", "Switching to Detail view for order: $orderId")
+        
+        // UI 상태 전환
+        binding.layoutInitial.visibility = View.GONE
+        binding.layoutPaymentFinish.visibility = View.GONE
+        binding.layoutPaymentMethods.visibility = View.GONE
+        binding.layoutPaymentDetail.visibility = View.VISIBLE
+        
+        // 설정 버튼 숨기기
+        binding.btnSettings.visibility = View.GONE
+        
+        // 주문번호 업데이트
+        binding.tvDetailOrderNumber.text = "주문번호: $orderId"
+        
+        // 카카오페이 결제하기 버튼 리스너
+        binding.btnDoPay.setOnClickListener {
+            handlePaymentFinish()
+        }
+
+        // 다른 결제수단 결제하기 버튼 리스너
+        binding.btnOtherPay.setOnClickListener {
+            showPaymentMethods()
+        }
+
+        // 취소하기 버튼 리스너
+        binding.btnCancelPay.setOnClickListener {
+            AlertDialog.Builder(requireContext())
+                .setTitle("결제 취소")
+                .setMessage("취소하시면 POS에서 요청온 결재 요청이 취소됩니다.\n취소후에는 POS기에서 결제 재요청하여야 합니다.")
+                .setPositiveButton("확인") { _, _ ->
+                    resetToInitialManualState()
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
+    }
+
+    private fun resetToInitialManualState() {
+        Log.d("CardFragment", "Resetting UI to initial manual state (cancellation)")
+        
+        // 1. 모든 결제 관련 화면 숨기기
+        binding.layoutPaymentDetail.visibility = View.GONE
+        binding.layoutPaymentMethods.visibility = View.GONE
+        binding.layoutPaymentFinish.visibility = View.GONE
+        
+        // 2. 초기 화면 표시 및 수동 시작 버튼 노출
+        binding.layoutInitial.visibility = View.VISIBLE
+        binding.btnSettings.visibility = View.VISIBLE
+        
+        // 🔥 중요한 점: 광고는 시작하지 않고 "결제 시작" 버튼이 보이는 상태가 되어야 함
+        stopAdvertiseAndGatt()
+        binding.btnToggle.visibility = View.VISIBLE
+        binding.btnToggle.text = "결제 시작"
+    }
+    private fun showPaymentMethods() {
+        Log.d("CardFragment", "Switching to Payment Methods selection view")
+        
+        binding.layoutPaymentDetail.visibility = View.GONE
+        binding.layoutPaymentMethods.visibility = View.VISIBLE
+        
+        // 예시 버튼들 (액션 없음)
+        binding.btnPaySimple.setOnClickListener { showToast("카드 간편 결제를 선택했습니다 (예시)") }
+        binding.btnPayNormal.setOnClickListener { showToast("카드 일반 결제를 선택했습니다 (예시)") }
+        binding.btnPaySamsung.setOnClickListener { showToast("SAMSUNG Pay를 선택했습니다 (예시)") }
+        
+        // 뒤로가기 버튼
+        binding.btnBackToDetail.setOnClickListener {
+            binding.layoutPaymentMethods.visibility = View.GONE
+            binding.layoutPaymentDetail.visibility = View.VISIBLE
+        }
+    }
+
+    private fun handlePaymentFinish() {
+        Log.d("CardFragment", "Payment finish received - switching UI to finish state")
+        
+        // 1. 모든 타이머 및 BLE 중지
+        scanTimer?.cancel()
+        connectedTimer?.cancel()
+        isConnected = false
+        stopAdvertiseAndGatt()
+
+        // 2. 다른 레이아웃 숨기기
+        binding.layoutInitial.visibility = View.GONE
+        binding.layoutPaymentDetail.visibility = View.GONE
+        binding.layoutPaymentMethods.visibility = View.GONE
+        
+        // 설정 버튼 숨기기
+        binding.btnSettings.visibility = View.GONE
+
+        // 3. 결제 완료 전용 레이아웃 표시
+        binding.layoutPaymentFinish.visibility = View.VISIBLE
     }
 
     override fun onClientConnected(device: BluetoothDevice) {
@@ -261,54 +368,7 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
         }
     }
 
-    private fun showOrderDialog(orderId: String, additionalData: Map<String, String>?) {
-        // 1단계: 결제 요청 도착 확인 팝업
-        showPaymentNotificationDialog(orderId, additionalData)
-    }
 
-    private fun showPaymentNotificationDialog(orderId: String, additionalData: Map<String, String>?) {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.payment_notification_dialog, null)
-        val dialog = AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .setCancelable(false)
-            .create()
-            
-        dialogView.findViewById<android.widget.Button>(R.id.btnConfirm).setOnClickListener {
-            dialog.dismiss()
-            // 2단계: 주문 확인 팝업 표시
-            showOrderDetailDialog(orderId, additionalData)
-        }
-
-        // 다이얼로그 배경을 투명하게 설정
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.show()
-    }
-
-    private fun showOrderDetailDialog(orderId: String, additionalData: Map<String, String>?) {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.payment_detail_dialog, null)
-        val dialog = AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
-
-        // 주문번호 표시
-        dialogView.findViewById<android.widget.TextView>(R.id.tvOrderNumber).text = "주문번호: $orderId"
-
-        // 결제하기 버튼 클릭 이벤트
-        dialogView.findViewById<android.widget.Button>(R.id.btnPay).setOnClickListener {
-            dialog.dismiss()
-            showToast("결제가 완료되었습니다!")
-        }
-        
-        // 다이얼로그 배경을 투명하게 설정
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialog.show()
-        
-        // 다이얼로그 크기 조정 (화면의 90% 너비 사용)
-        val displayMetrics = resources.displayMetrics
-        val width = (displayMetrics.widthPixels * 0.9).toInt()
-        dialog.window?.setLayout(width, android.view.ViewGroup.LayoutParams.WRAP_CONTENT)
-    }
 
     // 🔥 카드 탭 진입 시 즉시 BLE Advertise + GATT Server 시작
     private fun startInitialBleProcess() {
@@ -366,12 +426,15 @@ class CardFragment : Fragment(), GattServerManager.GattServerCallback {
     
     @SuppressLint("MissingPermission")
     private fun startAdvertiseAndGatt(cardNumber: String, phone4: String) {
-        // 🔥 1. 기존 advertise/GATT가 있으면 무조건 먼저 중지
-        stopAdvertiseAndGatt()
-        Log.d("CardFragment", "기존 advertise/GATT 중지 후 100ms 대기")
-
         // 🔥 2. 잠깐 대기 (이전 advertise/GATT 완전 종료 대기)
         Handler(Looper.getMainLooper()).postDelayed({
+            // UI 초기화 (상세/완료 화면 숨기고 초기화면 표시)
+            binding.layoutPaymentDetail.visibility = View.GONE
+            binding.layoutPaymentMethods.visibility = View.GONE
+            binding.layoutPaymentFinish.visibility = View.GONE
+            binding.layoutInitial.visibility = View.VISIBLE
+            binding.btnSettings.visibility = View.VISIBLE
+            
             // ViewModel 업데이트 - 전체 파라미터 전달
             val deviceName = settingsManager.getDeviceName()
             val encoding = settingsManager.getEncodingType()

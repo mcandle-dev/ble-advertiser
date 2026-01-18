@@ -35,7 +35,14 @@ class GattServerManager(
          *
          * @param success Service 등록 성공 여부
          */
-        fun onGattServerReady(success: Boolean)
+        /**
+         * GATT Server와 Service가 준비 완료되었을 때 호출
+         * 이 콜백 이후에 BLE Advertise를 시작해야 함
+         *
+         * @param success Service 등록 성공 여부
+         * @param errorMessage 실패 시 에러 메시지
+         */
+        fun onGattServerReady(success: Boolean, errorMessage: String? = null)
 
         /**
          * AT+CONNECT 명령어를 수신했을 때 호출
@@ -82,7 +89,7 @@ class GattServerManager(
     fun startGattServer() {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
             Log.e(TAG, "Bluetooth is not available or not enabled")
-            callback.onGattServerReady(false)
+            callback.onGattServerReady(false, "Bluetooth is not available or not enabled")
             return
         }
 
@@ -91,7 +98,7 @@ class GattServerManager(
 
             if (bluetoothGattServer == null) {
                 Log.e(TAG, "Failed to open GATT server")
-                callback.onGattServerReady(false)
+                callback.onGattServerReady(false, "Failed to open GATT server (returned null)")
                 return
             }
 
@@ -123,7 +130,7 @@ class GattServerManager(
 
             if (!result) {
                 Log.e(TAG, "Failed to initiate addService()")
-                callback.onGattServerReady(false)
+                callback.onGattServerReady(false, "Failed to initiate addService()")
             } else {
                 Log.d(TAG, "addService() initiated, waiting for onServiceAdded callback...")
                 Log.d(TAG, "Service UUID: ${GattServiceConfig.SERVICE_UUID}")
@@ -132,7 +139,7 @@ class GattServerManager(
             }
         } catch (e: SecurityException) {
             Log.e(TAG, "Security exception starting GATT server", e)
-            callback.onGattServerReady(false)
+            callback.onGattServerReady(false, "Security exception: ${e.message}")
         }
     }
 
@@ -168,7 +175,7 @@ class GattServerManager(
                 callback.onGattServerReady(true)
             } else {
                 Log.e(TAG, "❌ Failed to add service: status=$status")
-                callback.onGattServerReady(false)
+                callback.onGattServerReady(false, "Failed to add service: status=$status")
             }
         }
 
